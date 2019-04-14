@@ -42,6 +42,7 @@ function knitro(nlp :: AbstractNLPModel;
 
   lvarinf = isinf.(nlp.meta.lvar)
   if !all(lvarinf)
+    lvar = nlp.meta.lvar
     if any(lvarinf)
       lvar = copy(nlp.meta.lvar)
       lvar[lvarinf] .= -KTR_INFINITY
@@ -51,6 +52,7 @@ function knitro(nlp :: AbstractNLPModel;
 
   uvarinf = isinf.(nlp.meta.uvar)
   if !all(uvarinf)
+    uvar = nlp.meta.uvar
     if any(uvarinf)
       uvar = copy(nlp.meta.uvar)
       uvar[uvarinf] .= KTR_INFINITY
