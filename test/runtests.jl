@@ -28,7 +28,7 @@ function test_with_callback()
   end
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2, [-1.2; 1.0])
   stats = knitro(nlp, opttol=1e-12, callback=callback)
-  # @test stats.solver_specific[:internal_msg] == KNITRO.KN_RC_USER_TERMINATION  # strangely, this fails!
+  @test stats.solver_specific[:internal_msg] == KNITRO.KN_RC_USER_TERMINATION
 end
 
 test_unconstrained()

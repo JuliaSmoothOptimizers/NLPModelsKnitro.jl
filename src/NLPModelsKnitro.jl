@@ -19,8 +19,7 @@ const knitro_statuses = Dict(0 => :first_order,
                              #-11 => Invalid problem definition
                              #-12 => Invalid option
                              #-13 => Invalid number detected
-                             -300 => :unbounded,
-                             -504 => :User_Requested_Stop)
+                             -300 => :unbounded)
 
 """`output = knitro(nlp)`
 
@@ -146,7 +145,6 @@ function knitro(nlp :: AbstractNLPModel;
   open(tmpfile, "w") do io
     redirect_stdout(io) do
       nStatus = KNITRO.KN_solve(kc)
-      @show nStatus
     end
   end
   knitro_output = readlines(tmpfile)
