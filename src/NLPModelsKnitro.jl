@@ -120,7 +120,7 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
   end
 
   # register callbacks
-  cb = KNITRO.KN_add_eval_callback(kc, evalAll)
+  cb = KNITRO.KN_add_eval_callback_all(kc, evalAll)
   KNITRO.KN_set_cb_grad(kc, cb, evalAll,
                         jacIndexCons=convert(Vector{Int32}, jrows .- 1),  # indices must be 0-based
                         jacIndexVars=convert(Vector{Int32}, jcols .- 1))
