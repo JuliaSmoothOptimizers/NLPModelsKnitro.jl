@@ -89,7 +89,7 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
   KNITRO.KN_set_con_lobnds(kc, lcon)
   KNITRO.KN_set_con_upbnds(kc, ucon)
 
-  jrows, jcols = jac_structure(nlp)
+  jrows, jcols = m > 0 ? jac_structure(nlp) : (Int[], Int[])
   hrows, hcols = hess_structure(nlp)
 
   # define evaluation callback
