@@ -1,0 +1,12 @@
+[deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+GR = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
+JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
+KNITRO = "67920dd8-b58e-52a8-8622-53c4cffbe346"
+NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+
+[compat]
+Documenter = "~0.21"
+NLPModels = "~0.8"
