@@ -53,7 +53,7 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
     lvar = nlp.meta.lvar
     if any(lvarinf)
       lvar = copy(nlp.meta.lvar)
-      lvar[lvarinf] .= -KN_INFINITY
+      lvar[lvarinf] .= -KNITRO.KN_INFINITY
     end
     KNITRO.KN_set_var_lobnds(kc, lvar)
   end
@@ -63,7 +63,7 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
     uvar = nlp.meta.uvar
     if any(uvarinf)
       uvar = copy(nlp.meta.uvar)
-      uvar[uvarinf] .= KN_INFINITY
+      uvar[uvarinf] .= KNITRO.KN_INFINITY
     end
     KNITRO.KN_set_var_upbnds(kc, uvar)
   end
@@ -78,13 +78,13 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
   lconinf = isinf.(lcon)
   if any(lconinf)
     lcon = copy(nlp.meta.lcon)
-    lcon[lconinf] .= -KN_INFINITY
+    lcon[lconinf] .= -KNITRO.KN_INFINITY
   end
   ucon = nlp.meta.ucon
   uconinf = isinf.(ucon)
   if any(uconinf)
     ucon = copy(nlp.meta.ucon)
-    ucon[uconinf] .= KN_INFINITY
+    ucon[uconinf] .= KNITRO.KN_INFINITY
   end
   KNITRO.KN_set_con_lobnds(kc, lcon)
   KNITRO.KN_set_con_upbnds(kc, ucon)
