@@ -36,7 +36,6 @@ const knitro_statuses = Dict(0 => :first_order,
 
 function _knitro(::Val{true}, nlp :: AbstractNLPModel;
                  callback :: Union{Function,Nothing} = nothing,
-                 ignore_time :: Bool = false,
                  kwargs...)
   n, m = nlp.meta.nvar, nlp.meta.ncon
 
@@ -131,53 +130,31 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
   # specify that we are able to provide the Hessian without including the objective
   KNITRO.KN_set_param(kc, KNITRO.KN_PARAM_HESSIAN_NO_F, KNITRO.KN_HESSIAN_NO_F_ALLOW)
 
-  print_output = true
-
-  # Options
-  for (k,v) in kwargs
-    if ignore_time || k != :outlev || v ≥ KNITRO.KN_OUTLEV_SUMMARY
-      KNITRO.KN_set_param(kc, string(k), v)
-    else
-      if v > 0
-        @warn("`outlev` should be ≥ $(KNITRO.KN_OUTLEV_SUMMARY) to get the elapsed time, if you don't care about the elapsed time, pass `ignore_time=true`")
-      end
-      print_output = false
-      KNITRO.KN_set_param(kc, "outlev", KNITRO.KN_OUTLEV_SUMMARY)
-    end
+  # pass options to KNITRO
+  for (k, v) in kwargs
+    KNITRO.KN_set_param(kc, string(k), v)
   end
 
   # set user-defined callback called after each iteration
   callback == nothing || KNITRO.KN_set_newpt_callback(kc, callback)
 
-  tmpfile = tempname()
-  local status
-  open(tmpfile, "w") do io
-    redirect_stdout(io) do
-      nStatus = KNITRO.KN_solve(kc)
-    end
+  t = @timed begin
+    nStatus = KNITRO.KN_solve(kc)
   end
-  knitro_output = readlines(tmpfile)
 
-  Δt = 0.0
-  for line in knitro_output
-    if occursin("CPU time", line)
-      Δt = Meta.parse(split(split(line, "=")[2], "(")[1])
-      break
-    end
-  end
-  if print_output
-    println(join(knitro_output, "\n"))
-  end
+  Δt = t[2]
 
   nStatus, obj_val, x, lambda_ = KNITRO.KN_get_solution(kc)
   primal_feas = KNITRO.KN_get_abs_feas_error(kc)
   dual_feas = KNITRO.KN_get_abs_opt_error(kc)
+  iter = KNITRO.KN_get_number_iters(kc)
+  # Δt = KNITRO.KN_get_solve_time_cpu(kc)  # FIXME: available in KNITRO 12
 
   KNITRO.KN_reset_params_to_defaults(kc)
   KNITRO.KN_free(kc)
 
   return GenericExecutionStats(get(knitro_statuses, nStatus, :unknown), nlp, solution=x,
-                               objective=obj_val, dual_feas=dual_feas,
+                               objective=obj_val, dual_feas=dual_feas, iter=convert(Int, iter),
                                primal_feas=primal_feas, elapsed_time=Δt,
                                solver_specific=Dict(:multipliers_con => lambda_[1:m],
                                                     :multipliers_L => lambda_[m+1:m+n],  # don't know how to get those separately
@@ -190,13 +167,12 @@ end
 
 function _knitro(::Val{false}, nls :: AbstractNLSModel;
                 callback :: Union{Function,Nothing} = nothing,
-                ignore_time :: Bool = false,
                 kwargs...)
   n, m, ne = nls.meta.nvar, nls.meta.ncon, nls.nls_meta.nequ
 
   if m > 0
     @warn "Knitro only treats bound-constrained least-squares problems; converting to feasibility form"
-    return knitro(FeasibilityFormNLS(nls), callback=callback, ignore_time=ignore_time; kwargs...)
+    return knitro(FeasibilityFormNLS(nls), callback=callback; kwargs...)
   end
 
   kc = KNITRO.KN_new()
@@ -262,53 +238,31 @@ function _knitro(::Val{false}, nls :: AbstractNLSModel;
                            jacIndexRsds=convert(Vector{Int32}, jrows .- 1),  # indices must be 0-based
                            jacIndexVars=convert(Vector{Int32}, jcols .- 1))
 
-  print_output = true
-
-  # Options
-  for (k,v) in kwargs
-    if ignore_time || k != :outlev || v ≥ KNITRO.KN_OUTLEV_SUMMARY
-      KNITRO.KN_set_param(kc, string(k), v)
-    else
-      if v > 0
-        @warn("`outlev` should be ≥ $(KNITRO.KN_OUTLEV_SUMMARY) to get the elapsed time, if you don't care about the elapsed time, pass `ignore_time=true`")
-      end
-      print_output = false
-      KNITRO.KN_set_param(kc, "outlev", KNITRO.KN_OUTLEV_SUMMARY)
-    end
+  # pass options to KNITRO
+  for (k, v) in kwargs
+    KNITRO.KN_set_param(kc, string(k), v)
   end
 
   # set user-defined callback called after each iteration
   callback == nothing || KNITRO.KN_set_newpt_callback(kc, callback)
 
-  tmpfile = tempname()
-  local status
-  open(tmpfile, "w") do io
-    redirect_stdout(io) do
-      nStatus = KNITRO.KN_solve(kc)
-    end
+  t = @timed begin
+    nStatus = KNITRO.KN_solve(kc)
   end
-  knitro_output = readlines(tmpfile)
 
-  Δt = 0.0
-  for line in knitro_output
-    if occursin("CPU time", line)
-      Δt = Meta.parse(split(split(line, "=")[2], "(")[1])
-      break
-    end
-  end
-  if print_output
-    println(join(knitro_output, "\n"))
-  end
+  Δt = t[2]
 
   nStatus, obj_val, x, lambda_ = KNITRO.KN_get_solution(kc)
   primal_feas = KNITRO.KN_get_abs_feas_error(kc)
   dual_feas = KNITRO.KN_get_abs_opt_error(kc)
+  iter = KNITRO.KN_get_number_iters(kc)
+  # Δt = KNITRO.KN_get_solve_time_cpu(kc)  # FIXME: available in KNITRO 12
 
   KNITRO.KN_reset_params_to_defaults(kc)
   KNITRO.KN_free(kc)
 
   return GenericExecutionStats(get(knitro_statuses, nStatus, :unknown), nls, solution=x,
-                               objective=obj_val, dual_feas=dual_feas,
+                               objective=obj_val, dual_feas=dual_feas, iter=convert(Int, iter),
                                primal_feas=primal_feas, elapsed_time=Δt,
                                solver_specific=Dict(:multipliers_con => lambda_[1:m],
                                                     :multipliers_L => lambda_[m+1:m+n],  # don't know how to get those separately
