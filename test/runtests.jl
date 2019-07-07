@@ -4,6 +4,7 @@ function test_unconstrained()
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2, [-1.2; 1.0])
   stats = knitro(nlp)
   @test isapprox(stats.solution, [1.0; 1.0], rtol=1e-6)
+  @test stats.iter == 20
 end
 
 function test_constrained()
@@ -11,12 +12,14 @@ function test_constrained()
                    c=x->[sum(x) - 1.0], lcon=[0.0], ucon=[0.0])
   stats = knitro(nlp)
   @test isapprox(stats.solution, [-1.4; 2.4], rtol=1e-6)
+  @test stats.iter == 1
 end
 
 function test_with_params()
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2, [-1.2; 1.0])
   stats = knitro(nlp, opttol=1e-12, presolve=0)
   @test isapprox(stats.solution, [1.0; 1.0], rtol=1e-6)
+  @test stats.iter == 21
 end
 
 function test_with_callback()
@@ -29,6 +32,7 @@ function test_with_callback()
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2, [-1.2; 1.0])
   stats = knitro(nlp, opttol=1e-12, callback=callback)
   @test stats.solver_specific[:internal_msg] == KNITRO.KN_RC_USER_TERMINATION
+  @test stats.iter == 2
 end
 
 function test_unconstrained_nls()
@@ -37,6 +41,7 @@ function test_unconstrained_nls()
   stats = knitro(nls)
   @test isapprox(stats.objective, 0, atol=1.0e-6)
   @test isapprox(stats.solution, ones(2), rtol=1e-6)
+  @test stats.iter == 11
 end
 
 function test_larger_unconstrained_nls()
@@ -46,6 +51,7 @@ function test_larger_unconstrained_nls()
   stats = knitro(nls)
   @test isapprox(stats.objective, 0, atol=1.0e-6)
   @test isapprox(stats.solution, ones(n), rtol=1e-6)
+  @test stats.iter == 4
 end
 
 function test_constrained_nls()
@@ -57,6 +63,7 @@ function test_constrained_nls()
   # this constrained NLS problem will have been converted to a FeasibilityFormNLS; extract the solution
   x = stats.solution[1:n]
   @test isapprox(x, [1.06473, 1.21503, 1.54598], rtol=1e-5)
+  @test stats.iter == 5
 end
 
 test_unconstrained()
