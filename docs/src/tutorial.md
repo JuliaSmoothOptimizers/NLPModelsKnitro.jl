@@ -77,9 +77,9 @@ we create an NLPModel, and we need to define the following API functions:
 - `obj(nlp, x)`: objective
 - `grad!(nlp, x, g)`: gradient
 - `cons!(nlp, x, c)`: constraints, if any
-- `rows, cols = jac_structure(nlp)`: structure of the Jacobian, if constrained;
+- `jac_structure!(nlp, rows, cols)`: structure of the Jacobian, if constrained;
 - `jac_coord!(nlp, x, rows, cols, vals)`: Jacobian values;
-- `hess_structure(nlp)`: structure of the lower triangle of the Hessian of the
+- `hess_structure!(nlp, rows, cols)`: structure of the lower triangle of the Hessian of the
   Lagrangian;
 - `hess_coord!(nlp, x, rows, cols, vals; obj_weight=1.0, y=[])`: Hessian of the
   Lagrangian, where `obj_weight` is the weight assigned to the objective, and `y` is the
@@ -118,10 +118,11 @@ function NLPModels.grad!(nlp :: LogisticRegression, β::AbstractVector, g::Abstr
   g .= nlp.X' * (hβ .- nlp.y) + nlp.λ * β
 end
 
-function NLPModels.hess_structure(nlp :: LogisticRegression)
+function NLPModels.hess_structure!(nlp :: LogisticRegression, rows::AbstractVector{<: Integer}, cols::AbstractVector{<: Integer})
   n = nlp.meta.nvar
   I = ((i,j) for i = 1:n, j = 1:n if i ≥ j)
-  return [getindex.(I, 1); 1:n], [getindex.(I, 2); 1:n]
+  rows[1 : nlp.meta.nnzh] .= [getindex.(I, 1); 1:n]
+  cols[1 : nlp.meta.nnzh] .= [getindex.(I, 2); 1:n]
 end
 
 function NLPModels.hess_coord!(nlp :: LogisticRegression, β::AbstractVector, rows::AbstractVector{<: Integer}, cols::AbstractVector{<: Integer}, vals::AbstractVector; obj_weight=1.0, y=Float64[])
