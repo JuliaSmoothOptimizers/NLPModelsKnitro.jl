@@ -17,22 +17,35 @@ Solves the `NLPModel` problem `nlp` using KNITRO.
 """
 knitro(nlp::AbstractNLPModel, args...; kwargs...) = _knitro(_is_general_nlp(nlp), nlp, args...; kwargs...)
 
-const knitro_statuses = Dict(0 => :first_order,
-                             # 1 => :first_order,
-                             # 2 => :infeasible,
-                             # 3 => :small_step,
-                             #4 => Diverging iterates
-                             #5 => User requestep stop
-                             #6 => Feasible point found
-                             # -1 => :max_iter,
-                             #-2 => Restoration failed
-                             #-3 => Error in step computation
-                             # -4 => :max_time,
-                             #-10 => Not enough degress of freedom
-                             #-11 => Invalid problem definition
-                             #-12 => Invalid option
-                             #-13 => Invalid number detected
-                             -300 => :unbounded)
+
+function knitro_statuses(code::Integer)
+  if code == 0
+    return :first_order
+  end
+  if code == -100
+    return :acceptable
+  end
+  if -299 ≤ code ≤ -200
+    return :infeasible
+  end
+  if -301 ≤ code ≤ -300
+    return :unbounded
+  end
+  if code == -400 || code == -410  # -400 = feasible, -410 = infeasible
+    return :max_iter
+  end
+  if code == -401 || code == -411  # -401 = feasible, -411 = infeasible
+    return :max_time
+  end
+  if code == -402 || code == -412  # -402 = feasible, -412 = infeasible
+    return :max_eval
+  end
+  if -599 ≤ code ≤ -500
+    return :exception
+  end
+  return :unknown
+end
+
 
 function _knitro(::Val{true}, nlp :: AbstractNLPModel;
                  callback :: Union{Function,Nothing} = nothing,
@@ -153,7 +166,7 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
   KNITRO.KN_reset_params_to_defaults(kc)
   KNITRO.KN_free(kc)
 
-  return GenericExecutionStats(get(knitro_statuses, nStatus, :unknown), nlp, solution=x,
+  return GenericExecutionStats(knitro_statuses(nStatus), nlp, solution=x,
                                objective=obj_val, dual_feas=dual_feas, iter=convert(Int, iter),
                                primal_feas=primal_feas, elapsed_time=Δt,
                                solver_specific=Dict(:multipliers_con => lambda_[1:m],
@@ -261,7 +274,7 @@ function _knitro(::Val{false}, nls :: AbstractNLSModel;
   KNITRO.KN_reset_params_to_defaults(kc)
   KNITRO.KN_free(kc)
 
-  return GenericExecutionStats(get(knitro_statuses, nStatus, :unknown), nls, solution=x,
+  return GenericExecutionStats(knitro_statuses(nStatus), nls, solution=x,
                                objective=obj_val, dual_feas=dual_feas, iter=convert(Int, iter),
                                primal_feas=primal_feas, elapsed_time=Δt,
                                solver_specific=Dict(:multipliers_con => lambda_[1:m],
