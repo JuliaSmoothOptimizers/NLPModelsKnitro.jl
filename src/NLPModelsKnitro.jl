@@ -11,9 +11,21 @@ using NLPModels, KNITRO, SolverTools
 _is_general_nlp(nlp::AbstractNLPModel) = Val{true}()
 _is_general_nlp(nls::AbstractNLSModel) = Val{typeof(nls) == FeasibilityFormNLS}()
 
-"""`output = knitro(nlp)`
+"""`output = knitro(nlp; kwargs...)`
 
 Solves the `NLPModel` problem `nlp` using KNITRO.
+
+# Optional keyword arguments
+* `x0`: a vector of size `nlp.meta.nvar` to specify an initial primal guess
+* `y0`: a vector of size `nlp.meta.ncon` to specify an initial dual guess for the general constraints
+* `z0`: a vector of size `nlp.meta.nvar` to specify initial multipliers for the bound constraints
+* `callback`: a user-defined `Function` called by KNITRO at each iteration.
+
+For more information on callbacks, see https://www.artelys.com/docs/knitro/2_userGuide/callbacks.html and
+the docstring of `KNITRO.KN_set_newpt_callback`.
+
+All other keyword arguments will be passed to KNITRO as an option.
+See https://www.artelys.com/docs/knitro/3_referenceManual/userOptions.html for the list of options accepted.
 """
 knitro(nlp::AbstractNLPModel, args...; kwargs...) = _knitro(_is_general_nlp(nlp), nlp, args...; kwargs...)
 
@@ -80,10 +92,6 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
     KNITRO.KN_set_var_upbnds(kc, uvar)
   end
 
-  # set primal and dual initial guess
-  KNITRO.KN_set_var_primal_init_values(kc, nlp.meta.x0)
-  KNITRO.KN_set_var_dual_init_values(kc,  nlp.meta.y0)
-
   # add constraints
   KNITRO.KN_add_cons(kc, m)
   lcon = nlp.meta.lcon
@@ -100,6 +108,21 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
   end
   KNITRO.KN_set_con_lobnds(kc, lcon)
   KNITRO.KN_set_con_upbnds(kc, ucon)
+
+  # set primal and dual initial guess
+  kwargs = Dict(kwargs)
+  if :x0 ∈ keys(kwargs)
+    KNITRO.KN_set_var_primal_init_values(kc, kwargs[:x0])
+    pop!(kwargs, :x0)
+  end
+  if :y0 ∈ keys(kwargs)
+    KNITRO.KN_set_con_dual_init_values(kc, kwargs[:y0])
+    pop!(kwargs, :y0)
+  end
+  if :z0 ∈ keys(kwargs)
+    KNITRO.KN_set_var_dual_init_values(kc, kwargs[:z0])
+    pop!(kwargs, :z0)
+  end
 
   jrows, jcols = m > 0 ? jac_structure(nlp) : (Int[], Int[])
   hrows, hcols = hess_structure(nlp)
@@ -179,8 +202,8 @@ end
 
 
 function _knitro(::Val{false}, nls :: AbstractNLSModel;
-                callback :: Union{Function,Nothing} = nothing,
-                kwargs...)
+                 callback :: Union{Function,Nothing} = nothing,
+                 kwargs...)
   n, m, ne = nls.meta.nvar, nls.meta.ncon, nls.nls_meta.nequ
 
   if m > 0
@@ -217,8 +240,15 @@ function _knitro(::Val{false}, nls :: AbstractNLSModel;
   end
 
   # set primal and dual initial guess
-  KNITRO.KN_set_var_primal_init_values(kc, nls.meta.x0)
-  KNITRO.KN_set_var_dual_init_values(kc,  nls.meta.y0)
+  kwargs = Dict(kwargs)
+  if :x0 ∈ keys(kwargs)
+    KNITRO.KN_set_var_primal_init_values(kc, kwargs[:x0])
+    pop!(kwargs, :x0)
+  end
+  if :z0 ∈ keys(kwargs)
+    KNITRO.KN_set_var_dual_init_values(kc, kwargs[:z0])
+    pop!(kwargs, :z0)
+  end
 
   # add number of residual functions
   KNITRO.KN_add_rsds(kc, ne)

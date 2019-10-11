@@ -1,25 +1,48 @@
-using NLPModelsKnitro, NLPModels, KNITRO, Test
+using LinearAlgebra
+using Test
+
+using KNITRO
+
+using NLPModels, NLPModelsKnitro
 
 function test_unconstrained()
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2, [-1.2; 1.0])
   stats = knitro(nlp)
   @test isapprox(stats.solution, [1.0; 1.0], rtol=1e-6)
-  @test stats.iter == 20
+  @test stats.status == :first_order
 end
 
-function test_constrained()
+function test_qp()
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 4 * (x[2] - 3)^2, zeros(2),
                    c=x->[sum(x) - 1.0], lcon=[0.0], ucon=[0.0])
   stats = knitro(nlp)
   @test isapprox(stats.solution, [-1.4; 2.4], rtol=1e-6)
   @test stats.iter == 1
+  @test stats.status == :first_order
+end
+
+function test_constrained()
+  nlp = ADNLPModel(x -> (x[1] - 1)^2 + 4 * (x[2] - 3)^2, zeros(2),
+                   c=x->[dot(x, x)], lcon=[0.0], ucon=[1.0])
+  stats = knitro(nlp)
+  @test isapprox(stats.solution, [0.11021046172567574, 0.9939082725775202], rtol=1e-6)
+  @test stats.status == :first_order
+
+  # test with a good primal-dual initial guess
+  x0 = copy(stats.solution)
+  y0 = copy(stats.solver_specific[:multipliers_con])
+  z0 = copy(stats.solver_specific[:multipliers_L])
+  stats = knitro(nlp, x0=x0, y0=y0, z0=z0)
+  @test stats.status == :first_order
+  @test isapprox(stats.solution, [0.11021046172567574, 0.9939082725775202], rtol=1e-6)
+  @test stats.iter == 2
 end
 
 function test_with_params()
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2, [-1.2; 1.0])
   stats = knitro(nlp, opttol=1e-12, presolve=0)
   @test isapprox(stats.solution, [1.0; 1.0], rtol=1e-6)
-  @test stats.iter == 21
+  @test stats.status == :first_order
 end
 
 function test_with_callback()
@@ -33,6 +56,7 @@ function test_with_callback()
   stats = knitro(nlp, opttol=1e-12, callback=callback)
   @test stats.solver_specific[:internal_msg] == KNITRO.KN_RC_USER_TERMINATION
   @test stats.iter == 2
+  @test stats.status == :exception
 end
 
 function test_unconstrained_nls()
@@ -41,7 +65,7 @@ function test_unconstrained_nls()
   stats = knitro(nls)
   @test isapprox(stats.objective, 0, atol=1.0e-6)
   @test isapprox(stats.solution, ones(2), rtol=1e-6)
-  @test stats.iter == 11
+  @test stats.status == :first_order
 end
 
 function test_larger_unconstrained_nls()
@@ -51,7 +75,15 @@ function test_larger_unconstrained_nls()
   stats = knitro(nls)
   @test isapprox(stats.objective, 0, atol=1.0e-6)
   @test isapprox(stats.solution, ones(n), rtol=1e-6)
-  @test stats.iter == 4
+  @test stats.status == :first_order
+
+  # test with a good primalinitial guess
+  x0 = copy(stats.solution)
+  stats = knitro(nls, x0=x0)
+  @test isapprox(stats.objective, 0, atol=1.0e-6)
+  @test isapprox(stats.solution, ones(n), rtol=1e-6)
+  @test stats.status == :first_order
+  @test stats.iter == 0
 end
 
 function test_constrained_nls()
@@ -62,11 +94,12 @@ function test_constrained_nls()
   stats = knitro(nls, opttol=1e-12)
   # this constrained NLS problem will have been converted to a FeasibilityFormNLS; extract the solution
   x = stats.solution[1:n]
-  @test isapprox(x, [1.06473, 1.21503, 1.54598], rtol=1e-5)
-  @test stats.iter == 5
+  @test isapprox(x, [1.4531163686846829, 1.3717762129799664, 1.0033358563128216], rtol=1e-5)
+  @test stats.status == :first_order
 end
 
 test_unconstrained()
+test_qp()
 test_constrained()
 test_with_params()
 test_with_callback()
