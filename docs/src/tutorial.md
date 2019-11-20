@@ -1,16 +1,13 @@
 # Tutorial
 
-NLPModelsKnitro is a thin KNITRO wrapper for NLPModels. In this tutorial we'll show
-examples of problems created with NLPModels and solved with KNITRO.
-
+NLPModelsKnitro is a thin KNITRO wrapper for NLPModels. In this tutorial we show examples of problems created with NLPModels and solved with KNITRO.
 ```@contents
 Pages = ["tutorial.md"]
 ```
 
 ## Simple problems
 
-The interface for calling KNITRO is very simple:
-
+Calling KNITRO is simple:
 ```@docs
 knitro
 ```
@@ -19,8 +16,7 @@ Let's create an NLPModel for the Rosenbrock function
 ```math
 f(x) = (x_1 - 1)^2 + 100 (x_2 - x_1^2)^2
 ```
-to test this interface:
-
+and solve it with KNITRO:
 ```@example ex1
 using NLPModels, NLPModelsKnitro
 
@@ -29,8 +25,7 @@ stats = knitro(nlp)
 print(stats)
 ```
 
-For comparison, we present the same problem and output using the JuMP route:
-
+For comparison, we present the same problem and output using JuMP:
 ```@example ex2
 using JuMP, KNITRO
 
@@ -41,8 +36,7 @@ x0 = [-1.2; 1.0]
 optimize!(model)
 ```
 
-Another example, using a constrained problem
-
+Here is an example with a constrained problem:
 ```@example ex1
 n = 10
 x0 = ones(n)
@@ -55,37 +49,33 @@ stats = knitro(nlp, outlev=0)
 print(stats)
 ```
 
-## Output
+## Return value
 
-The output of `knitro` is a `GenericExecutionStats` from `SolverTools`. It contains basic information from the solver.
-In addition to the built-in fields of `GenericExecutionStats`, we also store in
-`solver_specific` the following fields:
+The return value of `knitro` is a `GenericExecutionStats` from `SolverTools`. It contains basic information on the solution returned by the solver.
+In addition to the built-in fields of `GenericExecutionStats`, we store the following subfields in the `solver_specific` field:
 
-- `multipliers_con`: Constraints multipliers;
-- `multipliers_L`: Variables lower-bound multipliers;
-- `multipliers_U`: Variables upper-bound multipliers;
-- `internal_msg`: Detailed KNITRO output message.
+- `multipliers_con`: constraints multipliers;
+- `multipliers_L`: variables lower-bound multipliers;
+- `multipliers_U`: variables upper-bound multipliers;
+- `internal_msg`: detailed KNITRO output message.
 
+Here is an example using the constrained problem solve:
 ```@example ex1
 stats.solver_specific[:internal_msg]
 ```
 
 ## Manual input
 
-This is an example where we specify the problem and its derivatives manually. For this,
-we create an NLPModel, and we need to define the following API functions:
-- `obj(nlp, x)`: objective
-- `grad!(nlp, x, g)`: gradient
-- `cons!(nlp, x, c)`: constraints, if any
-- `jac_structure!(nlp, rows, cols)`: structure of the Jacobian, if constrained;
-- `jac_coord!(nlp, x, rows, cols, vals)`: Jacobian values;
-- `hess_structure!(nlp, rows, cols)`: structure of the lower triangle of the Hessian of the
-  Lagrangian;
-- `hess_coord!(nlp, x, rows, cols, vals; obj_weight=1.0, y=[])`: Hessian of the
-  Lagrangian, where `obj_weight` is the weight assigned to the objective, and `y` is the
-  multipliers vector.
+In this section, we work through an example where we specify the problem and its derivatives manually. For this, we need to implement the following `NLPModel` API methods:
+- `obj(nlp, x)`: evaluate the objective value at `x`;
+- `grad!(nlp, x, g)`: evaluate the objective gradient at `x`;
+- `cons!(nlp, x, c)`: evaluate the vector of constraints, if any;
+- `jac_structure!(nlp, rows, cols)`: fill `rows` and `cols` with the spartity structure of the Jacobian, if the problem is constrained;
+- `jac_coord!(nlp, x, vals)`: fill `vals` with the Jacobian values corresponding to the sparsity structure returned by `jac_structure!()`;
+- `hess_structure!(nlp, rows, cols)`: fill `rows` and `cols` with the spartity structure of the lower triangle of the Hessian of the Lagrangian;
+- `hess_coord!(nlp, x, y, vals; obj_weight=1.0)`: fill `vals` with the values of the Hessian of the Lagrangian corresponding to the sparsity structure returned by `hess_structure!()`, where `obj_weight` is the weight assigned to the objective, and `y` is the vector of multipliers.
 
-Let's implement a logistic regression model. We consider the model ``h(\beta; x) = (1 + e^{-\beta^Tx})^{-1}``, and the loss function
+The model that we implement is a logistic regression modelq. We consider the model ``h(\beta; x) = (1 + e^{-\beta^Tx})^{-1}``, and the loss function
 ```math
 \ell(\beta) = -\sum_{i = 1}^m y_i \ln h(\beta; x_i) + (1 - y_i) \ln(1 - h(\beta; x_i))
 ```
