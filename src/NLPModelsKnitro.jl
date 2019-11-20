@@ -137,17 +137,33 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
       m > 0 && cons!(nlp, x, evalResult.c)
     elseif evalRequestCode == KNITRO.KN_RC_EVALGA
       grad!(nlp, x, evalResult.objGrad)
-      m > 0 && jac_coord!(nlp, x, jrows, jcols, evalResult.jac)
+      m > 0 && jac_coord!(nlp, x, evalResult.jac)
     elseif evalRequestCode == KNITRO.KN_RC_EVALH
-      hess_coord!(nlp, x, hrows, hcols, evalResult.hess, obj_weight=evalRequest.sigma, y=evalRequest.lambda)
+      if m > 0
+        hess_coord!(nlp, x, view(evalRequest.lambda, 1:m), evalResult.hess, obj_weight=evalRequest.sigma)
+      else
+        hess_coord!(nlp, x, evalResult.hess, obj_weight=evalRequest.sigma)
+      end
     elseif evalRequestCode == KNITRO.KN_RC_EVALHV
       vec = evalRequest.vec
-      hprod!(nlp, x, vec, evalResult.hessVec, obj_weight=evalRequest.sigma, y=evalRequest.lambda)
-    elseif evalRequestCode == KNITRO.KN_RC_EVALH_NO_F
-      hess_coord!(nlp, x, hrows, hcols, evalResult.hess, obj_weight=0.0)
+      if m > 0
+        hprod!(nlp, x, view(evalRequest.lambda, 1:m), vec, evalResult.hessVec, obj_weight=evalRequest.sigma)
+      else
+        hprod!(nlp, x, vec, evalResult.hessVec, obj_weight=evalRequest.sigma)
+      end
+    elseif evalRequestCode == KNITRO.KN_RC_EVALH_NO_F  # it would be silly to call this on unconstrained problems but better be careful
+      if m > 0
+        hess_coord!(nlp, x, view(evalRequest.lambda, 1:m), evalResult.hess, obj_weight=0.0)
+      else
+        hess_coord!(nlp, x, evalResult.hess, obj_weight=0.0)
+      end
     elseif evalRequestCode == KNITRO.KN_RC_EVALHV_NO_F
       vec = evalRequest.vec
-      hprod!(nlp, x, vec, evalResult.hessVec, obj_weight=0.0)
+      if m > 0
+        hprod!(nlp, x, view(evalRequest.lambda, 1:m), vec, evalResult.hessVec, obj_weight=0.0)
+      else
+        hprod!(nlp, x, vec, evalResult.hessVec, obj_weight=0.0)
+      end
     else
         return KNITRO.KN_RC_CALLBACK_ERR
     end
@@ -271,7 +287,7 @@ function _knitro(::Val{false}, nls :: AbstractNLSModel;
         @warn "callbackEvalRJ incorrectly called with eval request code " evalRequest.evalRequestCode
         return -1
     end
-    jac_coord_residual!(nls, evalRequest.x, jrows, jcols, evalResult.rsdJac)
+    jac_coord_residual!(nls, evalRequest.x, evalResult.rsdJac)
     return 0
   end
 
