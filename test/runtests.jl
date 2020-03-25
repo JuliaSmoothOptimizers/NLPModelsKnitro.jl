@@ -47,7 +47,7 @@ end
 
 function test_with_callback()
   function callback(kc, x, lambda_, userParams)
-    if KNITRO.KN_get_number_iters(userParams) > 1
+    if KNITRO.KN_get_number_iters(kc) > 1
       return KNITRO.KN_RC_USER_TERMINATION
     end
     return 0
