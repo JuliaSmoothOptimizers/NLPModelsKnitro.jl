@@ -61,6 +61,7 @@ end
 
 function _knitro(::Val{true}, nlp :: AbstractNLPModel;
                  callback :: Union{Function,Nothing} = nothing,
+                 x0 :: AbstractVector = nlp.meta.x0,
                  kwargs...)
   n, m = nlp.meta.nvar, nlp.meta.ncon
 
@@ -219,6 +220,7 @@ end
 
 function _knitro(::Val{false}, nls :: AbstractNLSModel;
                  callback :: Union{Function,Nothing} = nothing,
+                 x0 :: AbstractVector = nlp.meta.x0,
                  kwargs...)
   n, m, ne = nls.meta.nvar, nls.meta.ncon, nls.nls_meta.nequ
 
