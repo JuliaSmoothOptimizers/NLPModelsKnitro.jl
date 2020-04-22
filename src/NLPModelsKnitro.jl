@@ -114,6 +114,8 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
   if :x0 ∈ keys(kwargs)
     KNITRO.KN_set_var_primal_init_values(kc, kwargs[:x0])
     pop!(kwargs, :x0)
+  else
+    KNITRO.KN_set_var_primal_init_values(kc, nlp.meta.x0)
   end
   if :y0 ∈ keys(kwargs)
     KNITRO.KN_set_con_dual_init_values(kc, kwargs[:y0])
@@ -260,6 +262,8 @@ function _knitro(::Val{false}, nls :: AbstractNLSModel;
   if :x0 ∈ keys(kwargs)
     KNITRO.KN_set_var_primal_init_values(kc, kwargs[:x0])
     pop!(kwargs, :x0)
+  else
+    KNITRO.KN_set_var_primal_init_values(kc, nlp.meta.x0)
   end
   if :z0 ∈ keys(kwargs)
     KNITRO.KN_set_var_dual_init_values(kc, kwargs[:z0])
