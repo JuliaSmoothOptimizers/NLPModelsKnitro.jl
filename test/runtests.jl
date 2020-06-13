@@ -14,7 +14,7 @@ end
 
 function test_qp()
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 4 * (x[2] - 3)^2, zeros(2),
-                   c=x->[sum(x) - 1.0], lcon=[0.0], ucon=[0.0])
+                   x->[sum(x) - 1.0], [0.0], [0.0])
   stats = knitro(nlp)
   @test isapprox(stats.solution, [-1.4; 2.4], rtol=1e-6)
   @test stats.iter == 1
@@ -23,7 +23,7 @@ end
 
 function test_constrained()
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 4 * (x[2] - 3)^2, zeros(2),
-                   c=x->[dot(x, x)], lcon=[0.0], ucon=[1.0])
+                   x->[dot(x, x)], [0.0], [1.0])
   stats = knitro(nlp)
   @test isapprox(stats.solution, [0.11021046172567574, 0.9939082725775202], rtol=1e-6)
   @test stats.status == :first_order
@@ -90,7 +90,7 @@ function test_constrained_nls()
   n = 3
   F_larger(x) = [[10 * (x[i+1] - x[i]^2) for i = 1:n-1]; [x[i] - 1 for i = 1:n-1]]
   c_quad(x) = [sum(x.^2) - 5; prod(x) - 2]
-  nls = ADNLSModel(F_larger, [0.5; 1.0; 1.5], 2 * (n-1), c=c_quad, lcon=zeros(2), ucon=zeros(2))
+  nls = ADNLSModel(F_larger, [0.5; 1.0; 1.5], 2 * (n-1), c_quad, zeros(2), zeros(2))
   stats = knitro(nls, opttol=1e-12)
   # this constrained NLS problem will have been converted to a FeasibilityFormNLS; extract the solution
   x = stats.solution[1:n]
