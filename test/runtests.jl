@@ -94,7 +94,7 @@ function test_constrained_nls()
   stats = knitro(nls, opttol=1e-12)
   # this constrained NLS problem will have been converted to a FeasibilityFormNLS; extract the solution
   x = stats.solution[1:n]
-  @test isapprox(x, [1.4531163686846829, 1.3717762129799664, 1.0033358563128216], rtol=1e-5)
+  @test isapprox(x, [1.0647319483656656, 1.21502560462289, 1.5459814546883264], rtol=1e-5)
   @test stats.status == :first_order
 end
 
