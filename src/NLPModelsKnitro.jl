@@ -263,7 +263,7 @@ function _knitro(::Val{false}, nls :: AbstractNLSModel;
     KNITRO.KN_set_var_primal_init_values(kc, kwargs[:x0])
     pop!(kwargs, :x0)
   else
-    KNITRO.KN_set_var_primal_init_values(kc, nlp.meta.x0)
+    KNITRO.KN_set_var_primal_init_values(kc, nls.meta.x0)
   end
   if :z0 ∈ keys(kwargs)
     KNITRO.KN_set_var_dual_init_values(kc, kwargs[:z0])
