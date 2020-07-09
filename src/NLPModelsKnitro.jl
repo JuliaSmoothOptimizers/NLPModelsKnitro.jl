@@ -9,7 +9,7 @@ using NLPModels, KNITRO, SolverTools
 # If an NLSModel has constraints other than bounds, we convert it to a FeasibilityFormNLS.
 # Because FeasibilityFormNLS <: AbstractNLSModel, we need a trait to dispatch on.
 _is_general_nlp(nlp::AbstractNLPModel) = Val{true}()
-_is_general_nlp(nls::AbstractNLSModel) = Val{typeof(nls) == FeasibilityFormNLS}()
+_is_general_nlp(nls::AbstractNLSModel) = Val{isa(nls, FeasibilityFormNLS)}()
 
 """`output = knitro(nlp; kwargs...)`
 
