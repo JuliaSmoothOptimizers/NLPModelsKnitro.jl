@@ -30,8 +30,8 @@ function test_constrained()
 
   # test with a good primal-dual initial guess
   x0 = copy(stats.solution)
-  y0 = copy(stats.solver_specific[:multipliers_con])
-  z0 = copy(stats.solver_specific[:multipliers_L])
+  y0 = copy(stats.multipliers)
+  z0 = copy(stats.multipliers_L)
   stats = knitro(nlp, x0=x0, y0=y0, z0=z0)
   @test stats.status == :first_order
   @test isapprox(stats.solution, [0.11021046172567574, 0.9939082725775202], rtol=1e-6)
