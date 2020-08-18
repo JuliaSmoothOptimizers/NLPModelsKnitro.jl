@@ -210,10 +210,10 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
   return GenericExecutionStats(knitro_statuses(nStatus), nlp, solution=x,
                                objective=obj_val, dual_feas=dual_feas, iter=convert(Int, iter),
                                primal_feas=primal_feas, elapsed_time=Δt,
-                               solver_specific=Dict(:multipliers_con => lambda_[1:m],
-                                                    :multipliers_L => lambda_[m+1:m+n],  # don't know how to get those separately
-                                                    :multipliers_U => [],
-                                                    :internal_msg => nStatus)
+                               multipliers=lambda_[1:m],
+                               multipliers_L=lambda_[m+1:m+n],  # don't know how to get those separately
+                               multipliers_U=eltype(x)[],
+                               solver_specific=Dict(:internal_msg => nStatus)
                               )
 
 end
@@ -327,13 +327,12 @@ function _knitro(::Val{false}, nls :: AbstractNLSModel;
   return GenericExecutionStats(knitro_statuses(nStatus), nls, solution=x,
                                objective=obj_val, dual_feas=dual_feas, iter=convert(Int, iter),
                                primal_feas=primal_feas, elapsed_time=Δt,
-                               solver_specific=Dict(:multipliers_con => lambda_[1:m],
-                                                    :multipliers_L => lambda_[m+1:m+n],  # don't know how to get those separately
-                                                    :multipliers_U => [],
-                                                    :internal_msg => nStatus)
+                               multipliers=lambda_[1:m],
+                               multipliers_L=lambda_[m+1:m+n],  # don't know how to get those separately
+                               multipliers_U=eltype(x)[],
+                               solver_specific=Dict(:internal_msg => nStatus)
                               )
 
 end
-
 
 end # module
