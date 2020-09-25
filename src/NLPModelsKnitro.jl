@@ -242,7 +242,7 @@ function _knitro(::Val{false}, nls :: AbstractNLSModel;
     lvar = nls.meta.lvar
     if any(lvarinf)
       lvar = copy(nls.meta.lvar)
-      lvar[lvarinf] .= -KTR_INFINITY
+      lvar[lvarinf] .= -KNITRO.KN_INFINITY
     end
     KNITRO.KN_set_var_lobnds(kc, lvar)
   end
@@ -252,7 +252,7 @@ function _knitro(::Val{false}, nls :: AbstractNLSModel;
     uvar = nls.meta.uvar
     if any(uvarinf)
       uvar = copy(nls.meta.uvar)
-      uvar[uvarinf] .= KTR_INFINITY
+      uvar[uvarinf] .= KNITRO.KN_INFINITY
     end
     KNITRO.KN_set_var_upbnds(kc, uvar)
   end
