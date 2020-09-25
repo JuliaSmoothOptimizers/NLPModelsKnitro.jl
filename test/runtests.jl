@@ -90,7 +90,7 @@ function test_constrained_nls()
   n = 3
   F_larger(x) = [[10 * (x[i+1] - x[i]^2) for i = 1:n-1]; [x[i] - 1 for i = 1:n-1]]
   c_quad(x) = [sum(x.^2) - 5; prod(x) - 2]
-  nls = ADNLSModel(F_larger, [0.5; 1.0; 1.5], 2 * (n-1), c_quad, zeros(2), zeros(2))
+  nls = ADNLSModel(F_larger, [0.5; 1.0; 1.5], 2 * (n-1), [1., 1., 1.], [Inf, Inf, Inf], c_quad, zeros(2), zeros(2))
   stats = knitro(nls, opttol=1e-12)
   # this constrained NLS problem will have been converted to a FeasibilityFormNLS; extract the solution
   x = stats.solution[1:n]
