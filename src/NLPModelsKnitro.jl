@@ -37,6 +37,9 @@ function knitro_statuses(code::Integer)
   if code == -100
     return :acceptable
   end
+  if -103 ≤ code ≤ -101
+    return :stalled #feasible
+  end
   if -299 ≤ code ≤ -200
     return :infeasible
   end
@@ -52,7 +55,7 @@ function knitro_statuses(code::Integer)
   if code == -402 || code == -412  # -402 = feasible, -412 = infeasible
     return :max_eval
   end
-  if -599 ≤ code ≤ -500
+  if -600 ≤ code ≤ -500
     return :exception
   end
   return :unknown
