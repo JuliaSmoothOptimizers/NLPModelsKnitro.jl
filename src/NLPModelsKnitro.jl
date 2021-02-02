@@ -4,6 +4,8 @@ export knitro
 
 using NLPModels, KNITRO, SolverTools
 
+const KNITRO_VERSION = KNITRO.unsafe_get_release()
+
 # Knitro does not accept least-squares problems with constraints other than bounds.
 # We must treat those as general NLPs.
 # If an NLSModel has constraints other than bounds, we convert it to a FeasibilityFormNLS.
@@ -199,13 +201,16 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
     nStatus = KNITRO.KN_solve(kc)
   end
 
-  Δt = t[2]
-
   nStatus, obj_val, x, lambda_ = KNITRO.KN_get_solution(kc)
   primal_feas = KNITRO.KN_get_abs_feas_error(kc)
   dual_feas = KNITRO.KN_get_abs_opt_error(kc)
   iter = KNITRO.KN_get_number_iters(kc)
-  # Δt = KNITRO.KN_get_solve_time_cpu(kc)  # FIXME: available in KNITRO 12
+  if KNITRO_VERSION ≥ v"12.0"
+    Δt = KNITRO.KN_get_solve_time_cpu(kc)
+    real_time = KNITRO.KN_get_solve_time_real(kc)
+  else
+    Δt = real_time = t[2]
+  end
 
   KNITRO.KN_reset_params_to_defaults(kc)
   KNITRO.KN_free(kc)
@@ -216,7 +221,10 @@ function _knitro(::Val{true}, nlp :: AbstractNLPModel;
                                multipliers=lambda_[1:m],
                                multipliers_L=lambda_[m+1:m+n],  # don't know how to get those separately
                                multipliers_U=eltype(x)[],
-                               solver_specific=Dict(:internal_msg => nStatus)
+                               solver_specific=Dict(
+                                                :internal_msg => nStatus,
+                                                :real_time => real_time
+                                                )
                               )
 
 end
@@ -316,13 +324,16 @@ function _knitro(::Val{false}, nls :: AbstractNLSModel;
     nStatus = KNITRO.KN_solve(kc)
   end
 
-  Δt = t[2]
-
   nStatus, obj_val, x, lambda_ = KNITRO.KN_get_solution(kc)
   primal_feas = KNITRO.KN_get_abs_feas_error(kc)
   dual_feas = KNITRO.KN_get_abs_opt_error(kc)
   iter = KNITRO.KN_get_number_iters(kc)
-  # Δt = KNITRO.KN_get_solve_time_cpu(kc)  # FIXME: available in KNITRO 12
+  if KNITRO_VERSION ≥ v"12.0"
+    Δt = KNITRO.KN_get_solve_time_cpu(kc)
+    real_time = KNITRO.KN_get_solve_time_real(kc)
+  else
+    Δt = real_time = t[2]
+  end
 
   KNITRO.KN_reset_params_to_defaults(kc)
   KNITRO.KN_free(kc)
@@ -333,7 +344,10 @@ function _knitro(::Val{false}, nls :: AbstractNLSModel;
                                multipliers=lambda_[1:m],
                                multipliers_L=lambda_[m+1:m+n],  # don't know how to get those separately
                                multipliers_U=eltype(x)[],
-                               solver_specific=Dict(:internal_msg => nStatus)
+                               solver_specific=Dict(
+                                                :internal_msg => nStatus,
+                                                :real_time => real_time
+                                                )
                               )
 
 end
