@@ -18,7 +18,7 @@ f(x) = (x_1 - 1)^2 + 100 (x_2 - x_1^2)^2
 ```
 and solve it with KNITRO:
 ```@example ex1
-using NLPModels, NLPModelsKnitro
+using ADNLPModels, NLPModelsKnitro
 
 nlp = ADNLPModel(x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2, [-1.2; 1.0])
 stats = knitro(nlp)
