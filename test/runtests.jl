@@ -3,7 +3,7 @@ using Test
 
 using KNITRO
 
-using NLPModels, NLPModelsKnitro
+using ADNLPModels, NLPModelsKnitro
 
 function test_unconstrained()
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2, [-1.2; 1.0])
