@@ -2,7 +2,7 @@ module NLPModelsKnitro
 
 export knitro
 
-using NLPModels, KNITRO, SolverTools
+using NLPModels, NLPModelsModifiers, KNITRO, SolverTools
 
 const KNITRO_VERSION = KNITRO.unsafe_get_release()
 
