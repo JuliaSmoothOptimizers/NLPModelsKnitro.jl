@@ -1,6 +1,6 @@
 export knitro
 
-using NLPModels, NLPModelsModifiers, SolverTools
+using NLPModels, NLPModelsModifiers, SolverCore
 
 # Knitro does not accept least-squares problems with constraints other than bounds.
 # We must treat those as general NLPs.
