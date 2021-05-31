@@ -3,7 +3,7 @@ using Test
 
 using KNITRO
 
-using ADNLPModels, NLPModelsKnitro
+using ADNLPModels, NLPModels, NLPModelsKnitro
 
 function test_unconstrained()
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2, [-1.2; 1.0])
@@ -56,6 +56,16 @@ function test_with_callback()
   @test stats.solver_specific[:internal_msg] == KNITRO.KN_RC_USER_TERMINATION
   @test stats.iter == 2
   @test stats.status == :exception
+end
+
+function test_maximize()
+  meta = NLPModelMeta(1, x0 = rand(1), lvar = zeros(1), uvar = ones(1), minimize = false)
+  nlp = ADNLPModel(meta, Counters(), ADNLPModels.ForwardDiffAD(), x -> x[1], x -> [])
+  stats = knitro(nlp)
+  @test isapprox(stats.solution, ones(1), rtol = 1e-6)
+  @test isapprox(stats.objective, 1.0, rtol = 1e-6)
+  @test isapprox(stats.multipliers_L, -ones(1), atol = 1e-6)
+  @test stats.status == :first_order
 end
 
 function test_unconstrained_nls()
@@ -111,6 +121,7 @@ test_qp()
 test_constrained()
 test_with_params()
 test_with_callback()
+test_maximize()
 
 test_unconstrained_nls()
 test_larger_unconstrained_nls()
