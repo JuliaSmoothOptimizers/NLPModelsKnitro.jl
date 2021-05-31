@@ -271,7 +271,11 @@ function _knitro(
   kc = KNITRO.KN_new()
   release = KNITRO.get_release()
   KNITRO.KN_reset_params_to_defaults(kc)
-  KNITRO.KN_set_obj_goal(kc, KNITRO.KN_OBJGOAL_MINIMIZE)
+  if nls.meta.minimize
+    KNITRO.KN_set_obj_goal(kc, KNITRO.KN_OBJGOAL_MINIMIZE)
+  else
+    KNITRO.KN_set_obj_goal(kc, KNITRO.KN_OBJGOAL_MAXIMIZE)
+  end
 
   # add variables and bound constraints
   KNITRO.KN_add_vars(kc, n)
