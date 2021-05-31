@@ -116,6 +116,16 @@ function test_constrained_nls()
   @test stats.status == :first_order
 end
 
+function test_nls_maximize()
+  meta = NLPModelMeta(1, x0 = rand(1), lvar = zeros(1), uvar = ones(1), minimize = false)
+  nls_meta = NLSMeta(1, 1)
+  nls = ADNLSModel(meta, nls_meta, NLSCounters(), ADNLPModels.ForwardDiffAD(), x -> x, x -> [])
+  stats = knitro(nls, outlev = 0)
+  @test isapprox(stats.solution, ones(1), rtol = 1e-6)
+  @test isapprox(stats.objective, 0.5, rtol = 1e-6)
+  @test stats.status == :first_order
+end
+
 test_unconstrained()
 test_qp()
 test_constrained()
@@ -126,3 +136,4 @@ test_maximize()
 test_unconstrained_nls()
 test_larger_unconstrained_nls()
 test_constrained_nls()
+test_nls_maximize()
