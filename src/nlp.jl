@@ -1,23 +1,22 @@
-function _knitro(
+function KnitroSolver(
   ::Val{true},
   nlp::AbstractNLPModel;
   callback::Union{Function, Nothing} = nothing,
   kwargs...,
-)
+) where T
   n, m = nlp.meta.nvar, nlp.meta.ncon
-
+  
   kc = KNITRO.KN_new()
-  release = KNITRO.get_release()
   KNITRO.KN_reset_params_to_defaults(kc)
   if nlp.meta.minimize
     KNITRO.KN_set_obj_goal(kc, KNITRO.KN_OBJGOAL_MINIMIZE)
   else
     KNITRO.KN_set_obj_goal(kc, KNITRO.KN_OBJGOAL_MAXIMIZE)
   end
-
+  
   # add variables and bound constraints
   KNITRO.KN_add_vars(kc, n)
-
+  
   lvarinf = isinf.(nlp.meta.lvar)
   if !all(lvarinf)
     lvar = nlp.meta.lvar
@@ -27,7 +26,7 @@ function _knitro(
     end
     KNITRO.KN_set_var_lobnds(kc, lvar)
   end
-
+  
   uvarinf = isinf.(nlp.meta.uvar)
   if !all(uvarinf)
     uvar = nlp.meta.uvar
@@ -159,37 +158,6 @@ function _knitro(
 
   # set user-defined callback called after each iteration
   callback == nothing || KNITRO.KN_set_newpt_callback(kc, callback)
-
-  t = @timed begin
-    nStatus = KNITRO.KN_solve(kc)
-  end
-
-  nStatus, obj_val, x, lambda_ = KNITRO.KN_get_solution(kc)
-  primal_feas = KNITRO.KN_get_abs_feas_error(kc)
-  dual_feas = KNITRO.KN_get_abs_opt_error(kc)
-  iter = KNITRO.KN_get_number_iters(kc)
-  if KNITRO_VERSION ≥ v"12.0"
-    Δt = KNITRO.KN_get_solve_time_cpu(kc)
-    real_time = KNITRO.KN_get_solve_time_real(kc)
-  else
-    Δt = real_time = t[2]
-  end
-
-  KNITRO.KN_reset_params_to_defaults(kc)
-  KNITRO.KN_free(kc)
-
-  return GenericExecutionStats(
-    knitro_statuses(nStatus),
-    nlp,
-    solution = x,
-    objective = obj_val,
-    dual_feas = dual_feas,
-    iter = convert(Int, iter),
-    primal_feas = primal_feas,
-    elapsed_time = Δt,
-    multipliers = lambda_[1:m],
-    multipliers_L = lambda_[(m + 1):(m + n)],  # don't know how to get those separately
-    multipliers_U = eltype(x)[],
-    solver_specific = Dict(:internal_msg => nStatus, :real_time => real_time),
-  )
+  
+  return KnitroSolver(kc)
 end
