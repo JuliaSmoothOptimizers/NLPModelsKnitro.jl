@@ -21,6 +21,26 @@ function test_qp()
   @test stats.status == :first_order
 end
 
+function test_qp_with_solver_and_evals()
+  nlp =
+    ADNLPModel(x -> (x[1] - 1)^2 + 4 * (x[2] - 3)^2, zeros(2), x -> [sum(x) - 1.0], [0.0], [0.0])
+  solver = KnitroSolver(nlp, outlev = 0)
+  stats = knitro!(nlp, solver)
+  @test isapprox(stats.solution, [-1.4; 2.4], rtol = 1e-6)
+  @test stats.iter == 1
+  @test stats.status == :first_order
+
+  gx = KNITRO.KN_get_objgrad_values(solver.kc)[2]
+  @test isapprox(gx, [-4.8; -4.8], rtol = 1e-6)
+  cx = KNITRO.KN_get_con_values(solver.kc)
+  @test isapprox(norm(cx), 0, atol = 1e-6)
+  Jx = KNITRO.KN_get_jacobian_values(solver.kc)
+  @test Jx[1] == [0; 0]
+  @test Jx[2] == [0; 1]
+  @test Jx[3] == [1; 1] 
+  finalize(solver)
+end
+
 function test_constrained()
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 4 * (x[2] - 3)^2, zeros(2), x -> [dot(x, x)], [0.0], [1.0])
   stats = knitro(nlp, outlev = 0)
@@ -95,6 +115,18 @@ function test_larger_unconstrained_nls()
   @test stats.iter == 0
 end
 
+function test_larger_unconstrained_nls_with_solver()
+  n = 100
+  F_larger(x) = [[10 * (x[i + 1] - x[i]^2) for i = 1:(n - 1)]; [x[i] - 1 for i = 1:(n - 1)]]
+  nls = ADNLSModel(F_larger, 0.9 * ones(n), 2 * (n - 1))  # there are local solutions other than ones(n)
+  solver = KnitroSolver(nls, outlev = 0)
+  stats = knitro!(nls, solver)
+  @test isapprox(stats.objective, 0, atol = 1.0e-6)
+  @test isapprox(stats.solution, ones(n), rtol = 1e-6)
+  @test stats.status == :first_order
+  finalize(solver)
+end
+
 function test_constrained_nls()
   n = 3
   F_larger(x) = [[10 * (x[i + 1] - x[i]^2) for i = 1:(n - 1)]; [x[i] - 1 for i = 1:(n - 1)]]
@@ -128,6 +160,7 @@ end
 
 test_unconstrained()
 test_qp()
+test_qp_with_solver_and_evals()
 test_constrained()
 test_with_params()
 test_with_callback()
@@ -135,5 +168,6 @@ test_maximize()
 
 test_unconstrained_nls()
 test_larger_unconstrained_nls()
+test_larger_unconstrained_nls_with_solver()
 test_constrained_nls()
 test_nls_maximize()
