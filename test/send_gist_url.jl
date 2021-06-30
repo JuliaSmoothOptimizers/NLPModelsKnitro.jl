@@ -1,12 +1,12 @@
 using Pkg
-Pkg.activate(joinpath("temp_env"))
-Pkg.add(["Git", "GitHub", "JSON"])
+Pkg.activate(joinpath("test_env"))
+Pkg.add("GitHub")
 Pkg.instantiate()
 
-using Git, GitHub, JSON
+using GitHub
 
-TEST_RESULTS_FILE = "test_results.txt"
-TEST_RESULTS_JSON = "test_results.json"
+ORG, REPO, PR = ENV["org"], ENV["repo"], ENV["pullrequest"]
+TEST_RESULTS_FILE = "$(ORG)_$(REPO)_$(PR).txt"
 
 # Need to add GITHUB_AUTH to your .bashrc
 myauth = GitHub.authenticate(ENV["GITHUB_AUTH"])
@@ -28,10 +28,10 @@ function create_gist(authentication)
 end
 
 function post_gist_url_to_pr(comment::String; kwargs...)
-  api = GitHub.DEFAULT_API
-  repo = get_repo(api, ENV["org"], ENV["repo"]; kwargs...)
-  pull_request = get_pull_request(api, ENV["org"], repo, parse(Int, ENV["pullrequest"]); kwargs...)
-  GitHub.create_comment(api, repo, pull_request, comment; kwargs...)
+    api = GitHub.DEFAULT_API
+    repo = get_repo(api, ORG, REPO; kwargs...)
+    pull_request = get_pull_request(api, ORG, repo, parse(Int, PR); kwargs...)
+    GitHub.create_comment(api, repo, pull_request, comment; kwargs...)
 end
 
 function get_repo(api::GitHub.GitHubWebAPI, org::String, repo_name::String; kwargs...)
@@ -60,4 +60,17 @@ function get_pull_request(
   return pull_request
 end
 
-post_gist_url_to_pr("Here are the test results: $(create_gist(myauth).html_url)"; auth = myauth)
+function get_comment_from_test_results()
+    open(TEST_RESULTS_FILE, "r") do file
+        text_to_match = r"tests passed"
+        for line in readlines(file)
+            if occursin(text_to_match, line)
+                return "$(strip(line)): "
+            end
+        end
+        return "Tests failed: "
+    end
+end
+
+comment = get_comment_from_test_results()
+post_gist_url_to_pr("$comment $(create_gist(myauth).html_url)"; auth = myauth)
