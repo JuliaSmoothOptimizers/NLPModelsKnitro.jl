@@ -45,7 +45,7 @@ pipeline {
 
      causeString: 'Triggered on comment',
 
-     token: "NLPModelKnitrotest",
+     token: "NLPModelsKnitroTest",
 
      printContributedVariables: true,
      printPostContent: true,
