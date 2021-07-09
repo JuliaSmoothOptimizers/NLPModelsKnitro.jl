@@ -22,5 +22,5 @@ deploydocs(
   repo = "github.com/JuliaSmoothOptimizers/NLPModelsKnitro.jl.git",
   target = "build",
   branch = "gh-pages",
-  devbranch = "master",
+  devbranch = "main",
 )
