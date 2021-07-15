@@ -37,7 +37,7 @@ function test_qp_with_solver_and_evals()
   Jx = KNITRO.KN_get_jacobian_values(solver.kc)
   @test Jx[1] == [0; 0]
   @test Jx[2] == [0; 1]
-  @test Jx[3] == [1; 1] 
+  @test Jx[3] == [1; 1]
   finalize(solver)
 end
 

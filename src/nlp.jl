@@ -3,9 +3,9 @@ function KnitroSolver(
   nlp::AbstractNLPModel;
   callback::Union{Function, Nothing} = nothing,
   kwargs...,
-) where T
+) where {T}
   n, m = nlp.meta.nvar, nlp.meta.ncon
-  
+
   kc = KNITRO.KN_new()
   KNITRO.KN_reset_params_to_defaults(kc)
   if nlp.meta.minimize
@@ -13,10 +13,10 @@ function KnitroSolver(
   else
     KNITRO.KN_set_obj_goal(kc, KNITRO.KN_OBJGOAL_MAXIMIZE)
   end
-  
+
   # add variables and bound constraints
   KNITRO.KN_add_vars(kc, n)
-  
+
   lvarinf = isinf.(nlp.meta.lvar)
   if !all(lvarinf)
     lvar = nlp.meta.lvar
@@ -26,7 +26,7 @@ function KnitroSolver(
     end
     KNITRO.KN_set_var_lobnds(kc, lvar)
   end
-  
+
   uvarinf = isinf.(nlp.meta.uvar)
   if !all(uvarinf)
     uvar = nlp.meta.uvar
@@ -158,6 +158,6 @@ function KnitroSolver(
 
   # set user-defined callback called after each iteration
   callback == nothing || KNITRO.KN_set_newpt_callback(kc, callback)
-  
+
   return KnitroSolver(kc)
 end
