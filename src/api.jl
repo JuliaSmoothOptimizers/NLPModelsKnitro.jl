@@ -9,25 +9,6 @@ using NLPModels, NLPModelsModifiers, SolverCore
 _is_general_nlp(nlp::AbstractNLPModel) = Val{true}()
 _is_general_nlp(nls::AbstractNLSModel) = Val{isa(nls, FeasibilityFormNLS)}()
 
-"""`output = knitro(nlp; kwargs...)`
-
-Solves the `NLPModel` problem `nlp` using KNITRO.
-
-# Optional keyword arguments
-* `x0`: a vector of size `nlp.meta.nvar` to specify an initial primal guess
-* `y0`: a vector of size `nlp.meta.ncon` to specify an initial dual guess for the general constraints
-* `z0`: a vector of size `nlp.meta.nvar` to specify initial multipliers for the bound constraints
-* `callback`: a user-defined `Function` called by KNITRO at each iteration.
-
-For more information on callbacks, see https://www.artelys.com/docs/knitro/2_userGuide/callbacks.html and
-the docstring of `KNITRO.KN_set_newpt_callback`.
-
-All other keyword arguments will be passed to KNITRO as an option.
-See https://www.artelys.com/docs/knitro/3_referenceManual/userOptions.html for the list of options accepted.
-"""
-knitro(nlp::AbstractNLPModel, args...; kwargs...) =
-  _knitro(_is_general_nlp(nlp), nlp, args...; kwargs...)
-
 function knitro_statuses(code::Integer)
   if code == 0
     return :first_order
@@ -64,7 +45,7 @@ mutable struct KnitroSolver
 end
 
 function Base.finalize(solver::KnitroSolver)
-#  KNITRO.KN_reset_params_to_defaults(solver.kc)
+  #  KNITRO.KN_reset_params_to_defaults(solver.kc)
   KNITRO.KN_free(solver.kc)
 end
 
@@ -104,28 +85,38 @@ KnitroSolver(nlp::AbstractNLPModel; kwargs...) = KnitroSolver(_is_general_nlp(nl
 include("nlp.jl")
 include("nls.jl")
 
-knitro!(nlp::AbstractNLPModel, solver::KnitroSolver) = _knitro!(nlp, solver)
+"""`output = knitro(nlp; kwargs...)`
 
-function _knitro(
-  val,
-  nlp::AbstractNLPModel;
-  callback::Union{Function, Nothing} = nothing,
-  kwargs...,
-)
-  solver = KnitroSolver(val, nlp, callback=callback; kwargs...)
-  stats = _knitro!(nlp, solver)
+Solves the `NLPModel` problem `nlp` using KNITRO.
+
+# Optional keyword arguments
+* `x0`: a vector of size `nlp.meta.nvar` to specify an initial primal guess
+* `y0`: a vector of size `nlp.meta.ncon` to specify an initial dual guess for the general constraints
+* `z0`: a vector of size `nlp.meta.nvar` to specify initial multipliers for the bound constraints
+* `callback`: a user-defined `Function` called by KNITRO at each iteration.
+
+For more information on callbacks, see https://www.artelys.com/docs/knitro/2_userGuide/callbacks.html and
+the docstring of `KNITRO.KN_set_newpt_callback`.
+
+All other keyword arguments will be passed to KNITRO as an option.
+See https://www.artelys.com/docs/knitro/3_referenceManual/userOptions.html for the list of options accepted.
+"""
+function knitro(nlp::AbstractNLPModel; kwargs...)
+  val = _is_general_nlp(nlp)
+  solver = KnitroSolver(val, nlp; kwargs...)
+  stats = knitro!(nlp, solver)
   finalize(solver)
   return stats
 end
 
-function _knitro!(nlp::AbstractNLPModel, solver::KnitroSolver)
+function knitro!(nlp::AbstractNLPModel, solver::KnitroSolver)
   kc = solver.kc
   t = @timed begin
     nStatus = KNITRO.KN_solve(kc)
   end
 
   nStatus, obj_val, x, lambda_ = KNITRO.KN_get_solution(kc)
-  n = length(x) 
+  n = length(x)
   m = length(lambda_) - n
   primal_feas = KNITRO.KN_get_abs_feas_error(kc)
   dual_feas = KNITRO.KN_get_abs_opt_error(kc)
