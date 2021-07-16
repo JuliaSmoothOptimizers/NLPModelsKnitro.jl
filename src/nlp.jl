@@ -51,6 +51,12 @@ function KnitroSolver(
     ucon = copy(nlp.meta.ucon)
     ucon[uconinf] .= KNITRO.KN_INFINITY
   end
+  if nlp.meta.nlin > 0
+    jac_lin = jac(nlp, nlp.meta.x0)
+    for klin in nlp.meta.lin 
+     KNITRO.KN_add_con_linear_struct(kc, Int32(klin - 1), Int32.(0:(n-1)), jac_lin[klin, :])
+    end
+  end
   KNITRO.KN_set_con_lobnds(kc, lcon)
   KNITRO.KN_set_con_upbnds(kc, ucon)
 
@@ -81,7 +87,10 @@ function KnitroSolver(
 
     if evalRequestCode == KNITRO.KN_RC_EVALFC
       evalResult.obj[1] = obj(nlp, x)
-      m > 0 && cons!(nlp, x, evalResult.c)
+      if m > 0
+        cons!(nlp, x, evalResult.c)
+        evalResult.c[nlp.meta.lin] .= 0
+      end
     elseif evalRequestCode == KNITRO.KN_RC_EVALGA
       grad!(nlp, x, evalResult.objGrad)
       m > 0 && jac_coord!(nlp, x, evalResult.jac)
