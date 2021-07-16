@@ -159,6 +159,15 @@ function test_nls_maximize()
   @test stats.status == :first_order
 end
 
+function test_linear_constraints()
+  meta = NLPModelMeta(2, x0 = zeros(2), ncon = 2, y0 = zeros(2), lcon = ones(2), ucon = ones(2), lin = Int32[1, 2])
+  nlp = ADNLPModel(meta, Counters(), ADNLPModels.ForwardDiffAD(2, 2), x -> sum(x), x -> [1. 2.; 3. 4.] * x)
+  stats = knitro(nlp, outlev = 0)
+  @test stats.solution == [-1; 1]
+  @test stats.objective == 0.0
+  @test stats.status == :first_order
+end
+
 test_unconstrained()
 test_qp()
 test_qp_with_solver_and_evals()
@@ -166,6 +175,7 @@ test_constrained()
 test_with_params()
 test_with_callback()
 test_maximize()
+test_linear_constraints()
 
 test_unconstrained_nls()
 test_larger_unconstrained_nls()
