@@ -87,13 +87,12 @@ function KnitroSolver(
 
     if evalRequestCode == KNITRO.KN_RC_EVALFC
       evalResult.obj[1] = obj(nlp, x)
-      if m > 0
-        cons!(nlp, x, evalResult.c)
-        evalResult.c[nlp.meta.lin] .= 0
-      end
+      m > 0 &&cons!(nlp, x, evalResult.c)
+      evalResult.c[nlp.meta.lin] .= 0
     elseif evalRequestCode == KNITRO.KN_RC_EVALGA
       grad!(nlp, x, evalResult.objGrad)
       m > 0 && jac_coord!(nlp, x, evalResult.jac)
+      evalResult.jac[findall(j -> jrows[j] in nlp.meta.lin, 1:nlp.meta.nnzj)] .= 0
     elseif evalRequestCode == KNITRO.KN_RC_EVALH
       if m > 0
         hess_coord!(
