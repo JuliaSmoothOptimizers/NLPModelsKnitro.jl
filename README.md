@@ -1,5 +1,7 @@
 # NLPModelsKnitro
 
+DO NOT MERGE
+
 ## How to Cite
 
  If you use NLPModelsKnitro.jl in your work, please cite using the format given in [CITATION.bib](https://github.com/JuliaSmoothOptimizers/NLPModelsKnitro.jl/blob/main/CITATION.bib).
