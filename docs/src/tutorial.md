@@ -5,19 +5,33 @@ NLPModelsKnitro is a thin KNITRO wrapper for NLPModels. In this tutorial we show
 Pages = ["tutorial.md"]
 ```
 
-## Simple problems
-
 Calling KNITRO is simple:
-```@docs
-knitro
+```julia
+`output = knitro(nlp; kwargs...)`
+
+Solves the `NLPModel` problem `nlp` using KNITRO.
+
+# Optional keyword arguments
+* `x0`: a vector of size `nlp.meta.nvar` to specify an initial primal guess
+* `y0`: a vector of size `nlp.meta.ncon` to specify an initial dual guess for the general constraints
+* `z0`: a vector of size `nlp.meta.nvar` to specify initial multipliers for the bound constraints
+* `callback`: a user-defined `Function` called by KNITRO at each iteration.
+
+For more information on callbacks, see [https://www.artelys.com/docs/knitro/2_userGuide/callbacks.html](https://www.artelys.com/docs/knitro/2_userGuide/callbacks.html) and
+the docstring of `KNITRO.KN_set_newpt_callback`.
+
+All other keyword arguments will be passed to KNITRO as an option.
+See [https://www.artelys.com/docs/knitro/3_referenceManual/userOptions.html](https://www.artelys.com/docs/knitro/3_referenceManual/userOptions.html) for the list of options accepted.
 ```
+
+## Simple problems
 
 Let's create an NLPModel for the Rosenbrock function
 ```math
 f(x) = (x_1 - 1)^2 + 100 (x_2 - x_1^2)^2
 ```
 and solve it with KNITRO:
-```@example ex1
+```julia
 using ADNLPModels, NLPModelsKnitro
 
 nlp = ADNLPModel(x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2, [-1.2; 1.0])
@@ -26,7 +40,7 @@ print(stats)
 ```
 
 For comparison, we present the same problem and output using JuMP:
-```@example ex2
+```julia
 using JuMP, KNITRO
 
 model = Model(with_optimizer(KNITRO.Optimizer))
@@ -37,7 +51,7 @@ optimize!(model)
 ```
 
 Here is an example with a constrained problem:
-```@example ex1
+```julia
 n = 10
 x0 = ones(n)
 x0[1:2:end] .= -1.2
@@ -60,7 +74,7 @@ In addition to the built-in fields of `GenericExecutionStats`, we store the foll
 - `internal_msg`: detailed KNITRO output message.
 
 Here is an example using the constrained problem solve:
-```@example ex1
+```julia
 stats.solver_specific[:internal_msg]
 ```
 
@@ -81,7 +95,7 @@ The model that we implement is a logistic regression modelq. We consider the mod
 ```
 with regularization ``\lambda \|\beta\|^2 / 2``.
 
-```@example ex3
+```julia
 using DataFrames, LinearAlgebra, NLPModels, NLPModelsKnitro, Random
 
 mutable struct LogisticRegression <: AbstractNLPModel
@@ -159,7 +173,7 @@ acc = count(df.buy .== ypred) / m
 println("acc = $acc")
 ```
 
-```@setup ex3
+```julia
 using Plots
 gr()
 
@@ -184,4 +198,4 @@ scatter!(df.age[P], df.salary[P], c=:red, m=:xcross, ms=7)
 contour!(range(18, 60, step=0.1), range(40_000, 180_000, step=1.0), f, levels=[0.5])
 ```
 
-![](ex3.png)
+![](assets/ex3.png)
