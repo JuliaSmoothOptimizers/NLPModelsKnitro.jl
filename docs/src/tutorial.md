@@ -56,9 +56,9 @@ n = 10
 x0 = ones(n)
 x0[1:2:end] .= -1.2
 nlp = ADNLPModel(x -> sum((x[i] - 1)^2 + 100 * (x[i+1] - x[i]^2)^2 for i = 1:n-1), x0,
-                 c=x -> [3 * x[k+1]^3 + 2 * x[k+2] - 5 + sin(x[k+1] - x[k+2]) * sin(x[k+1] + x[k+2]) +
-                         4 * x[k+1] - x[k] * exp(x[k] - x[k+1]) - 3 for k = 1:n-2],
-                 lcon=zeros(n-2), ucon=zeros(n-2))
+                 x -> [3 * x[k+1]^3 + 2 * x[k+2] - 5 + sin(x[k+1] - x[k+2]) * sin(x[k+1] + x[k+2]) +
+                       4 * x[k+1] - x[k] * exp(x[k] - x[k+1]) - 3 for k = 1:n-2],
+                 zeros(n-2), zeros(n-2))
 stats = knitro(nlp, outlev=0)
 print(stats)
 ```
@@ -98,11 +98,11 @@ with regularization ``\lambda \|\beta\|^2 / 2``.
 ```julia
 using DataFrames, LinearAlgebra, NLPModels, NLPModelsKnitro, Random
 
-mutable struct LogisticRegression <: AbstractNLPModel
+mutable struct LogisticRegression <: AbstractNLPModel{Float64, Vector{Float64}}
   X :: Matrix
   y :: Vector
   λ :: Real
-  meta :: NLPModelMeta # required by AbstractNLPModel
+  meta :: NLPModelMeta{Float64, Vector{Float64}} # required by AbstractNLPModel
   counters :: Counters # required by AbstractNLPModel
 end
 
@@ -127,9 +127,10 @@ function NLPModels.hess_structure!(nlp :: LogisticRegression, rows::AbstractVect
   I = ((i,j) for i = 1:n, j = 1:n if i ≥ j)
   rows[1 : nlp.meta.nnzh] .= [getindex.(I, 1); 1:n]
   cols[1 : nlp.meta.nnzh] .= [getindex.(I, 2); 1:n]
+  return rows, cols
 end
 
-function NLPModels.hess_coord!(nlp :: LogisticRegression, β::AbstractVector, rows::AbstractVector{<: Integer}, cols::AbstractVector{<: Integer}, vals::AbstractVector; obj_weight=1.0, y=Float64[])
+function NLPModels.hess_coord!(nlp :: LogisticRegression, β::AbstractVector, vals::AbstractVector; obj_weight=1.0, y=Float64[])
   n, m = nlp.meta.nvar, length(nlp.y)
   hβ = 1 ./ (1 .+ exp.(-nlp.X * β))
   fill!(vals, 0.0)
@@ -142,7 +143,7 @@ function NLPModels.hess_coord!(nlp :: LogisticRegression, β::AbstractVector, ro
     end
   end
   vals[nlp.meta.nnzh+1:end] .= nlp.λ * obj_weight
-  return rows, cols, vals
+  return vals
 end
 
 Random.seed!(0)
@@ -150,7 +151,7 @@ Random.seed!(0)
 # Training set
 m = 1000
 df = DataFrame(:age => rand(18:60, m), :salary => rand(40:180, m) * 1000)
-df[:buy] = (df.age .> 40 .+ randn(m) * 5) .| (df.salary .> 120_000 .+ randn(m) * 10_000)
+df[!, :buy] = (df.age .> 40 .+ randn(m) * 5) .| (df.salary .> 120_000 .+ randn(m) * 10_000)
 
 X = [ones(m) df.age df.age.^2 df.salary df.salary.^2 df.age .* df.salary]
 y = df.buy
@@ -163,7 +164,7 @@ stats = knitro(nlp, outlev=0)
 # Test set - same generation method
 m = 100
 df = DataFrame(:age => rand(18:60, m), :salary => rand(40:180, m) * 1000)
-df[:buy] = (df.age .> 40 .+ randn(m) * 5) .| (df.salary .> 120_000 .+ randn(m) * 10_000)
+df[!, :buy] = (df.age .> 40 .+ randn(m) * 5) .| (df.salary .> 120_000 .+ randn(m) * 10_000)
 
 X = [ones(m) df.age df.age.^2 df.salary df.salary.^2 df.age .* df.salary]
 hβ = 1 ./ (1 .+ exp.(-X * β))
