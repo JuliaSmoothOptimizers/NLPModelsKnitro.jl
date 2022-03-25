@@ -24,7 +24,7 @@ function KnitroSolver(
       lvar = copy(nlp.meta.lvar)
       lvar[lvarinf] .= -KNITRO.KN_INFINITY
     end
-    KNITRO.KN_set_var_lobnds(kc, lvar)
+    KNITRO.KN_set_var_lobnds_all(kc, lvar)
   end
 
   uvarinf = isinf.(nlp.meta.uvar)
@@ -34,7 +34,7 @@ function KnitroSolver(
       uvar = copy(nlp.meta.uvar)
       uvar[uvarinf] .= KNITRO.KN_INFINITY
     end
-    KNITRO.KN_set_var_upbnds(kc, uvar)
+    KNITRO.KN_set_var_upbnds_all(kc, uvar)
   end
 
   # add constraints
@@ -51,23 +51,23 @@ function KnitroSolver(
     ucon = copy(nlp.meta.ucon)
     ucon[uconinf] .= KNITRO.KN_INFINITY
   end
-  KNITRO.KN_set_con_lobnds(kc, lcon)
-  KNITRO.KN_set_con_upbnds(kc, ucon)
+  KNITRO.KN_set_con_lobnds_all(kc, lcon)
+  KNITRO.KN_set_con_upbnds_all(kc, ucon)
 
   # set primal and dual initial guess
   kwargs = Dict(kwargs)
   if :x0 ∈ keys(kwargs)
-    KNITRO.KN_set_var_primal_init_values(kc, kwargs[:x0])
+    KNITRO.KN_set_var_primal_init_values_all(kc, kwargs[:x0])
     pop!(kwargs, :x0)
   else
-    KNITRO.KN_set_var_primal_init_values(kc, nlp.meta.x0)
+    KNITRO.KN_set_var_primal_init_values_all(kc, nlp.meta.x0)
   end
   if :y0 ∈ keys(kwargs)
-    KNITRO.KN_set_con_dual_init_values(kc, kwargs[:y0])
+    KNITRO.KN_set_con_dual_init_values_all(kc, kwargs[:y0])
     pop!(kwargs, :y0)
   end
   if :z0 ∈ keys(kwargs)
-    KNITRO.KN_set_var_dual_init_values(kc, kwargs[:z0])
+    KNITRO.KN_set_var_dual_init_values_all(kc, kwargs[:z0])
     pop!(kwargs, :z0)
   end
 
