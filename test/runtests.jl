@@ -81,6 +81,7 @@ end
 function test_maximize()
   f, x0 = x -> x[1], [0.5]
   nlp = ADNLPModel(f, x0, zeros(1), ones(1), minimize = false)
+  @test nlp.meta.minimize == false
   stats = knitro(nlp, outlev = 0)
   @test isapprox(stats.solution, ones(1), rtol = 1e-6)
   @test isapprox(stats.objective, 1.0, rtol = 1e-6)
@@ -151,6 +152,7 @@ end
 function test_nls_maximize()
   f, x0 = x -> x, [0.5]
   nls = ADNLSModel(f, x0, 1, zeros(1), ones(1), minimize = false)
+  @test nls.meta.minimize == false
   stats = knitro(nls, outlev = 0)
   @test isapprox(stats.solution, ones(1), rtol = 1e-6)
   @test isapprox(stats.objective, 0.5, rtol = 1e-6)
