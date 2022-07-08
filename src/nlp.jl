@@ -51,16 +51,16 @@ function KnitroSolver(
     ucon = copy(nlp.meta.ucon)
     ucon[uconinf] .= KNITRO.KN_INFINITY
   end
+  KNITRO.KN_set_con_lobnds_all(kc, lcon)
+  KNITRO.KN_set_con_upbnds_all(kc, ucon)
   if nlp.meta.nlin > 0
     jlvals = jac_lin_coord(nlp, nlp.meta.x0)
     jlrows, jlcols = jac_lin_structure(nlp)
     for klin = 1:nlp.meta.lin_nnzj
       row = nlp.meta.lin[jlrows[klin]]
-      KNITRO.KN_add_con_linear_struct(kc, Int32(row - 1), Int32.(jlcols[klin] - 1), jlvals[klin])
+      KNITRO.KN_add_con_linear_struct(kc, Int32(row - 1), Int32(jlcols[klin] - 1), jlvals[klin])
     end
   end
-  KNITRO.KN_set_con_lobnds_all(kc, lcon)
-  KNITRO.KN_set_con_upbnds_all(kc, ucon)
 
   # set primal and dual initial guess
   kwargs = Dict(kwargs)
@@ -144,7 +144,7 @@ function KnitroSolver(
     kc,
     cb,
     evalAll,
-    jacIndexCons = convert(Vector{Int32}, jrows .- 1),  # indices must be 0-based
+    jacIndexCons = convert(Vector{Int32}, jrows .- 1 .+ nlp.meta.nlin),  # indices must be 0-based
     jacIndexVars = convert(Vector{Int32}, jcols .- 1),
   )
   KNITRO.KN_set_cb_hess(
