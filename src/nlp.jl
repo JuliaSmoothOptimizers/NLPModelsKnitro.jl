@@ -89,12 +89,12 @@ function KnitroSolver(
 
     if evalRequestCode == KNITRO.KN_RC_EVALFC
       evalResult.obj[1] = obj(nlp, x)
-      nlp.meta.nnln > 0 && cons_nln!(nlp, x, view(evalResult.c, nlp.meta.nln))
+      nlp.meta.nnln > 0 && cons_nln!(nlp, x, view(evalResult.c, 1:nlp.meta.nnln))
     elseif evalRequestCode == KNITRO.KN_RC_EVALGA
       grad!(nlp, x, evalResult.objGrad)
       nlp.meta.nnln > 0 && jac_nln_coord!(nlp, x, evalResult.jac)
     elseif evalRequestCode == KNITRO.KN_RC_EVALH
-      if m > 0
+      if nlp.meta.nnln > 0
         hess_coord!(
           nlp,
           x,
@@ -107,7 +107,7 @@ function KnitroSolver(
       end
     elseif evalRequestCode == KNITRO.KN_RC_EVALHV
       vec = evalRequest.vec
-      if m > 0
+      if nlp.meta.nnln > 0
         hprod!(
           nlp,
           x,
@@ -120,14 +120,14 @@ function KnitroSolver(
         hprod!(nlp, x, vec, evalResult.hessVec, obj_weight = evalRequest.sigma)
       end
     elseif evalRequestCode == KNITRO.KN_RC_EVALH_NO_F  # it would be silly to call this on unconstrained problems but better be careful
-      if m > 0
+      if nlp.meta.nnln > 0
         hess_coord!(nlp, x, view(evalRequest.lambda, 1:m), evalResult.hess, obj_weight = 0.0)
       else
         hess_coord!(nlp, x, evalResult.hess, obj_weight = 0.0)
       end
     elseif evalRequestCode == KNITRO.KN_RC_EVALHV_NO_F
       vec = evalRequest.vec
-      if m > 0
+      if nlp.meta.nnln > 0
         hprod!(nlp, x, view(evalRequest.lambda, 1:m), vec, evalResult.hessVec, obj_weight = 0.0)
       else
         hprod!(nlp, x, vec, evalResult.hessVec, obj_weight = 0.0)
@@ -139,7 +139,7 @@ function KnitroSolver(
   end
 
   # register callbacks
-  cb = KNITRO.KN_add_eval_callback_all(kc, evalAll)
+  cb = KNITRO.KN_add_eval_callback(kc, true, convert(Vector{Int32} ,nlp.meta.nln .- 1), evalAll)
   KNITRO.KN_set_cb_grad(
     kc,
     cb,
