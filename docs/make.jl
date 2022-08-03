@@ -3,7 +3,7 @@ using Documenter
 makedocs(
   #modules = [NLPModelsKnitro],
   doctest = true,
-  #strict = true,
+  strict = true,
   format = Documenter.HTML(
     prettyurls = get(ENV, "CI", nothing) == "true",
     assets = ["assets/style.css"],
