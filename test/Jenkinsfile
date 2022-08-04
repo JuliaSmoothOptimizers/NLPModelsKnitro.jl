@@ -59,6 +59,9 @@ pipeline {
   }
   stages {
     stage('run tests') {
+      when {
+        expression { env.comment }
+      }
       steps {
         sh "chmod +x test/run_tests.sh"
         sh "mkdir -p $HOME/tests/${org}/${repo}"
