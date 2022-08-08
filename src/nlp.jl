@@ -53,6 +53,14 @@ function KnitroSolver(
   end
   KNITRO.KN_set_con_lobnds_all(kc, lcon)
   KNITRO.KN_set_con_upbnds_all(kc, ucon)
+  if nlp.meta.nlin > 0
+    jlvals = jac_lin_coord(nlp, nlp.meta.x0)
+    jlrows, jlcols = jac_lin_structure(nlp)
+    for klin = 1:nlp.meta.lin_nnzj
+      row = nlp.meta.lin[jlrows[klin]]
+      KNITRO.KN_add_con_linear_struct(kc, Int32(row - 1), Int32(jlcols[klin] - 1), jlvals[klin])
+    end
+  end
 
   # set primal and dual initial guess
   kwargs = Dict(kwargs)
@@ -71,7 +79,7 @@ function KnitroSolver(
     pop!(kwargs, :z0)
   end
 
-  jrows, jcols = m > 0 ? jac_structure(nlp) : (Int[], Int[])
+  jrows, jcols = nlp.meta.nnln > 0 ? jac_nln_structure(nlp) : (Int[], Int[])
   hrows, hcols = hess_structure(nlp)
 
   # define evaluation callback
@@ -81,12 +89,12 @@ function KnitroSolver(
 
     if evalRequestCode == KNITRO.KN_RC_EVALFC
       evalResult.obj[1] = obj(nlp, x)
-      m > 0 && cons!(nlp, x, evalResult.c)
+      nlp.meta.nnln > 0 && cons_nln!(nlp, x, view(evalResult.c, 1:nlp.meta.nnln))
     elseif evalRequestCode == KNITRO.KN_RC_EVALGA
       grad!(nlp, x, evalResult.objGrad)
-      m > 0 && jac_coord!(nlp, x, evalResult.jac)
+      nlp.meta.nnln > 0 && jac_nln_coord!(nlp, x, evalResult.jac)
     elseif evalRequestCode == KNITRO.KN_RC_EVALH
-      if m > 0
+      if nlp.meta.nnln > 0
         hess_coord!(
           nlp,
           x,
@@ -99,7 +107,7 @@ function KnitroSolver(
       end
     elseif evalRequestCode == KNITRO.KN_RC_EVALHV
       vec = evalRequest.vec
-      if m > 0
+      if nlp.meta.nnln > 0
         hprod!(
           nlp,
           x,
@@ -112,14 +120,14 @@ function KnitroSolver(
         hprod!(nlp, x, vec, evalResult.hessVec, obj_weight = evalRequest.sigma)
       end
     elseif evalRequestCode == KNITRO.KN_RC_EVALH_NO_F  # it would be silly to call this on unconstrained problems but better be careful
-      if m > 0
+      if nlp.meta.nnln > 0
         hess_coord!(nlp, x, view(evalRequest.lambda, 1:m), evalResult.hess, obj_weight = 0.0)
       else
         hess_coord!(nlp, x, evalResult.hess, obj_weight = 0.0)
       end
     elseif evalRequestCode == KNITRO.KN_RC_EVALHV_NO_F
       vec = evalRequest.vec
-      if m > 0
+      if nlp.meta.nnln > 0
         hprod!(nlp, x, view(evalRequest.lambda, 1:m), vec, evalResult.hessVec, obj_weight = 0.0)
       else
         hprod!(nlp, x, vec, evalResult.hessVec, obj_weight = 0.0)
@@ -131,12 +139,12 @@ function KnitroSolver(
   end
 
   # register callbacks
-  cb = KNITRO.KN_add_eval_callback_all(kc, evalAll)
+  cb = KNITRO.KN_add_eval_callback(kc, true, convert(Vector{Int32} ,nlp.meta.nln .- 1), evalAll)
   KNITRO.KN_set_cb_grad(
     kc,
     cb,
     evalAll,
-    jacIndexCons = convert(Vector{Int32}, jrows .- 1),  # indices must be 0-based
+    jacIndexCons = convert(Vector{Int32}, jrows .- 1 .+ nlp.meta.nlin),  # indices must be 0-based
     jacIndexVars = convert(Vector{Int32}, jcols .- 1),
   )
   KNITRO.KN_set_cb_hess(

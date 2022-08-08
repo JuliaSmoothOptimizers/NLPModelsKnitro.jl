@@ -159,6 +159,34 @@ function test_nls_maximize()
   @test stats.status == :first_order
 end
 
+function test_linear_constraints()
+  nlp = ADNLPModel(x -> sum(x), zeros(2), Int32[1; 1; 2; 2], Int32[1; 2; 1; 2], [1.; 2.; 3.; 4.], x -> Float64[], ones(2), ones(2))
+  solver = KnitroSolver(nlp, outlev = 0)
+  stats = knitro!(nlp, solver)
+  @test isapprox(stats.solution, [-1; 1], rtol = 1e-6)
+  @test isapprox(stats.objective, 0.0, atol = 1e-6)
+  @test stats.status == :first_order
+  cx = KNITRO.KN_get_con_values(solver.kc)
+  @test isapprox(cx, [1, 1], rtol = 1e-6)
+  Jx = KNITRO.KN_get_jacobian_values(solver.kc)
+  @test Jx == (Int32[0, 0, 1, 1], Int32[0, 1, 0, 1], [1.0, 2.0, 3.0, 4.0])
+  finalize(solver)
+end
+
+function test_mixed_linear_constraints()
+  nlp = ADNLPModel(x -> sum(x), zeros(2), Int32[1; 1], Int32[1; 2], [3.; 4.], x -> [x[1] + 2 * x[2]], ones(2), ones(2))  
+  solver = KnitroSolver(nlp, outlev = 0)
+  stats = knitro!(nlp, solver)
+  @test isapprox(stats.solution, [-1; 1], rtol = 1e-6)
+  @test isapprox(stats.objective, 0.0, atol = 1e-6)
+  @test stats.status == :first_order
+  cx = KNITRO.KN_get_con_values(solver.kc)
+  @test isapprox(cx, [1, 1], rtol = 1e-6)
+  Jx = KNITRO.KN_get_jacobian_values(solver.kc)
+  @test Jx == (Int32[0, 0, 1, 1], Int32[0, 1, 0, 1], [3.0, 4.0, 1.0, 2.0])
+  finalize(solver)
+end
+
 test_unconstrained()
 test_qp()
 test_qp_with_solver_and_evals()
@@ -166,6 +194,8 @@ test_constrained()
 test_with_params()
 test_with_callback()
 test_maximize()
+test_linear_constraints()
+test_mixed_linear_constraints()
 
 test_unconstrained_nls()
 test_larger_unconstrained_nls()
