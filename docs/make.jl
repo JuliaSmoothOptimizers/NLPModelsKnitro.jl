@@ -10,7 +10,7 @@ makedocs(
     assets = ["assets/style.css"],
   ),
   sitename = "NLPModelsKnitro.jl",
-  pages = Any["Home" => "index.md", "Tutorial" => "tutorial.md", "Reference" => "reference.md"]
+  pages = Any["Home" => "index.md", "Tutorial" => "tutorial.md", "Reference" => "reference.md"],
 )
 
 if "deploy" in ARGS
