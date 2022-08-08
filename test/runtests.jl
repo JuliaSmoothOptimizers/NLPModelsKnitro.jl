@@ -160,7 +160,16 @@ function test_nls_maximize()
 end
 
 function test_linear_constraints()
-  nlp = ADNLPModel(x -> sum(x), zeros(2), Int32[1; 1; 2; 2], Int32[1; 2; 1; 2], [1.; 2.; 3.; 4.], x -> Float64[], ones(2), ones(2))
+  nlp = ADNLPModel(
+    x -> sum(x),
+    zeros(2),
+    Int32[1; 1; 2; 2],
+    Int32[1; 2; 1; 2],
+    [1.0; 2.0; 3.0; 4.0],
+    x -> Float64[],
+    ones(2),
+    ones(2),
+  )
   solver = KnitroSolver(nlp, outlev = 0)
   stats = knitro!(nlp, solver)
   @test isapprox(stats.solution, [-1; 1], rtol = 1e-6)
@@ -174,7 +183,16 @@ function test_linear_constraints()
 end
 
 function test_mixed_linear_constraints()
-  nlp = ADNLPModel(x -> sum(x), zeros(2), Int32[1; 1], Int32[1; 2], [3.; 4.], x -> [x[1] + 2 * x[2]], ones(2), ones(2))  
+  nlp = ADNLPModel(
+    x -> sum(x),
+    zeros(2),
+    Int32[1; 1],
+    Int32[1; 2],
+    [3.0; 4.0],
+    x -> [x[1] + 2 * x[2]],
+    ones(2),
+    ones(2),
+  )
   solver = KnitroSolver(nlp, outlev = 0)
   stats = knitro!(nlp, solver)
   @test isapprox(stats.solution, [-1; 1], rtol = 1e-6)

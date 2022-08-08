@@ -56,7 +56,7 @@ function KnitroSolver(
   if nlp.meta.nlin > 0
     jlvals = jac_lin_coord(nlp, nlp.meta.x0)
     jlrows, jlcols = jac_lin_structure(nlp)
-    for klin = 1:nlp.meta.lin_nnzj
+    for klin = 1:(nlp.meta.lin_nnzj)
       row = nlp.meta.lin[jlrows[klin]]
       KNITRO.KN_add_con_linear_struct(kc, Int32(row - 1), Int32(jlcols[klin] - 1), jlvals[klin])
     end
@@ -89,7 +89,7 @@ function KnitroSolver(
 
     if evalRequestCode == KNITRO.KN_RC_EVALFC
       evalResult.obj[1] = obj(nlp, x)
-      nlp.meta.nnln > 0 && cons_nln!(nlp, x, view(evalResult.c, 1:nlp.meta.nnln))
+      nlp.meta.nnln > 0 && cons_nln!(nlp, x, view(evalResult.c, 1:(nlp.meta.nnln)))
     elseif evalRequestCode == KNITRO.KN_RC_EVALGA
       grad!(nlp, x, evalResult.objGrad)
       nlp.meta.nnln > 0 && jac_nln_coord!(nlp, x, evalResult.jac)
@@ -139,7 +139,7 @@ function KnitroSolver(
   end
 
   # register callbacks
-  cb = KNITRO.KN_add_eval_callback(kc, true, convert(Vector{Int32} ,nlp.meta.nln .- 1), evalAll)
+  cb = KNITRO.KN_add_eval_callback(kc, true, convert(Vector{Int32}, nlp.meta.nln .- 1), evalAll)
   KNITRO.KN_set_cb_grad(
     kc,
     cb,
