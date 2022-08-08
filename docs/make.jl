@@ -1,4 +1,5 @@
 using Documenter
+using NLPModelsKnitro
 
 makedocs(
   modules = [NLPModelsKnitro],
