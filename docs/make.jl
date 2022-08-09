@@ -13,16 +13,8 @@ makedocs(
   pages = Any["Home" => "index.md", "Tutorial" => "tutorial.md", "Reference" => "reference.md"],
 )
 
-if "deploy" in ARGS
-  include("../../faketravis.jl")
-end
-
 deploydocs(
-  deps = nothing,
-  make = nothing,
   repo = "github.com/JuliaSmoothOptimizers/NLPModelsKnitro.jl.git",
-  target = "build",
-  branch = "gh-pages",
   devbranch = "main",
   push_preview = true,
 )

@@ -8,4 +8,4 @@ NLPModelsKnitro = "bec4dd0d-7755-52d5-9a02-22f0ffc7efcb"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 
 [compat]
-Documenter = "~0.26"
+Documenter = "0.27"
