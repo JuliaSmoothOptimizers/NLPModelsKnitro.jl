@@ -1,5 +1,3 @@
-export knitro, knitro!, KnitroSolver, finalize, setparams!
-
 using NLPModels, NLPModelsModifiers, SolverCore
 
 # Knitro does not accept least-squares problems with constraints other than bounds.
@@ -38,10 +36,6 @@ function knitro_statuses(code::Integer)
     return :exception
   end
   return :unknown
-end
-
-mutable struct KnitroSolver
-  kc
 end
 
 function Base.finalize(solver::KnitroSolver)
@@ -85,22 +79,6 @@ KnitroSolver(nlp::AbstractNLPModel; kwargs...) = KnitroSolver(_is_general_nlp(nl
 include("nlp.jl")
 include("nls.jl")
 
-"""`output = knitro(nlp; kwargs...)`
-
-Solves the `NLPModel` problem `nlp` using KNITRO.
-
-# Optional keyword arguments
-* `x0`: a vector of size `nlp.meta.nvar` to specify an initial primal guess
-* `y0`: a vector of size `nlp.meta.ncon` to specify an initial dual guess for the general constraints
-* `z0`: a vector of size `nlp.meta.nvar` to specify initial multipliers for the bound constraints
-* `callback`: a user-defined `Function` called by KNITRO at each iteration.
-
-For more information on callbacks, see https://www.artelys.com/docs/knitro/2_userGuide/callbacks.html and
-the docstring of `KNITRO.KN_set_newpt_callback`.
-
-All other keyword arguments will be passed to KNITRO as an option.
-See https://www.artelys.com/docs/knitro/3_referenceManual/userOptions.html for the list of options accepted.
-"""
 function knitro(nlp::AbstractNLPModel; kwargs...)
   val = _is_general_nlp(nlp)
   solver = KnitroSolver(val, nlp; kwargs...)
