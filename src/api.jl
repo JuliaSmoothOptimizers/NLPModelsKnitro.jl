@@ -106,6 +106,7 @@ function knitro!(nlp::AbstractNLPModel, solver::KnitroSolver)
     Δt = real_time = t[2]
   end
 
+  @assert length(x) == nlp.meta.nvar
   return GenericExecutionStats(
     knitro_statuses(nStatus),
     nlp,
