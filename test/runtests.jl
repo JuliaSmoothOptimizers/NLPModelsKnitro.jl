@@ -85,7 +85,8 @@ function test_maximize()
   stats = knitro(nlp, outlev = 0)
   @test isapprox(stats.solution, ones(1), rtol = 1e-6)
   @test isapprox(stats.objective, 1.0, rtol = 1e-6)
-  @test isapprox(stats.multipliers_L, -ones(1), atol = 1e-6)
+  @test isapprox(stats.multipliers_L, zeros(1), atol = 1e-6)
+  @test isapprox(stats.multipliers_U, ones(1), atol = 1e-6)
   @test stats.status == :first_order
 end
 
@@ -143,8 +144,9 @@ function test_constrained_nls()
     zeros(2),
   )
   stats = knitro(nls, opttol = 1e-12, outlev = 0)
-  # this constrained NLS problem will have been converted to a FeasibilityFormNLS; extract the solution
-  x = stats.solution[1:n]
+  # this constrained NLS problem will have been converted to a FeasibilityFormNLS
+  # but the stats return are for the original problem
+  x = stats.solution
   @test isapprox(x, [1.0647319483656656, 1.21502560462289, 1.5459814546883264], rtol = 1e-5)
   @test stats.status == :first_order
 end
