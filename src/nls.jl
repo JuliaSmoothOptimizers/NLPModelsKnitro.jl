@@ -4,13 +4,8 @@ function KnitroSolver(
   callback::Union{Function, Nothing} = nothing,
   kwargs...,
 ) where {T}
-  n, m, ne = nls.meta.nvar, nls.meta.ncon, nls.nls_meta.nequ
-
-  if m > 0
-    @warn "Knitro only treats bound-constrained least-squares problems; converting to feasibility form"
-    fnls = FeasibilityFormNLS(nls)
-    return KnitroSolver(_is_general_nlp(fnls), fnls, callback = callback; kwargs...)
-  end
+  @assert nls.meta.ncon == 0
+  n, ne = nls.meta.nvar, nls.nls_meta.nequ
 
   kc = KNITRO.KN_new()
   KNITRO.KN_reset_params_to_defaults(kc)
@@ -64,7 +59,7 @@ function KnitroSolver(
   # define callback for residual
   function callbackEvalR(kc, cb, evalRequest, evalResult, userParams)
     if evalRequest.evalRequestCode != KNITRO.KN_RC_EVALR
-      @warn "callbackEvalR incorrectly called with eval request code " evalRequest.evalRequestCode
+      @error "callbackEvalR incorrectly called with eval request code " evalRequest.evalRequestCode
       return -1
     end
     residual!(nls, evalRequest.x, evalResult.rsd)
@@ -74,7 +69,7 @@ function KnitroSolver(
   # define callback for residual Jacobian
   function callbackEvalRJ(kc, cb, evalRequest, evalResult, userParams)
     if evalRequest.evalRequestCode != KNITRO.KN_RC_EVALRJ
-      @warn "callbackEvalRJ incorrectly called with eval request code " evalRequest.evalRequestCode
+      @error "callbackEvalRJ incorrectly called with eval request code " evalRequest.evalRequestCode
       return -1
     end
     jac_coord_residual!(nls, evalRequest.x, evalResult.rsdJac)

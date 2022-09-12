@@ -80,9 +80,56 @@ include("nlp.jl")
 include("nls.jl")
 
 function knitro(nlp::AbstractNLPModel; kwargs...)
-  val = _is_general_nlp(nlp)
-  solver = KnitroSolver(val, nlp; kwargs...)
+  solver = KnitroSolver(nlp; kwargs...)
   stats = knitro!(nlp, solver)
+  finalize(solver)
+  return stats
+end
+
+function knitro(nlp::FeasibilityFormNLS; kwargs...)
+  solver = KnitroSolver(nlp; kwargs...)
+  stats = knitro!(nlp, solver)
+  finalize(solver)
+  return stats
+end
+
+function knitro(nls::AbstractNLSModel; kwargs...)
+  if nls.meta.ncon > 0
+    @warn "Knitro only treats bound-constrained least-squares problems; converting to feasibility form"
+    fnls = FeasibilityFormNLS(nls)
+    fstats = knitro(fnls; kwargs...)
+    # extract stats for the original problem
+    stats = GenericExecutionStats(nls)
+    fstats.status_reliable || error("status unreliable")
+    set_status!(stats, fstats.status)
+    fstats.solution_reliable || error("solution unreliable")
+    set_solution!(stats, fstats.solution[1:(nls.meta.nvar)])
+    fstats.objective_reliable || error("objective unreliable")
+    set_objective!(stats, stats.objective)
+    fstats.residuals_reliable || error("residuals unreliable")
+    set_residuals!(stats, fstats.primal_feas, fstats.dual_feas)
+    fstats.multipliers_reliable || error("multipliers unreliable")
+    set_multipliers!(
+      stats,
+      fstats.multipliers[(nls.nls_meta.nequ + 1):end],
+      has_bounds(nls) ? fstats.multipliers_L[1:(nls.meta.nvar)] : similar(fstats.multipliers_L),
+      has_bounds(nls) ? fstats.multipliers_U[1:(nls.meta.nvar)] : similar(fstats.multipliers_U),
+    )
+    fstats.iter_reliable || error("number of iterations unreliable")
+    set_iter!(stats, fstats.iter)
+    fstats.time_reliable || error("elapsed time unreliable")
+    set_time!(stats, fstats.elapsed_time)
+    if fstats.solver_specific_reliable
+      for (k, v) ∈ fstats.solver_specific
+        set_solver_specific!(stats, k, v)
+      end
+    else
+      error("solver-specific stats unreliable")
+    end
+    return stats
+  end
+  solver = KnitroSolver(nls; kwargs...)
+  stats = knitro!(nls, solver)
   finalize(solver)
   return stats
 end
@@ -106,18 +153,21 @@ function knitro!(nlp::AbstractNLPModel, solver::KnitroSolver)
     Δt = real_time = t[2]
   end
 
-  return GenericExecutionStats(
-    knitro_statuses(nStatus),
-    nlp,
-    solution = x,
-    objective = obj_val,
-    dual_feas = dual_feas,
-    iter = convert(Int, iter),
-    primal_feas = primal_feas,
-    elapsed_time = Δt,
-    multipliers = lambda_[1:m],
-    multipliers_L = lambda_[(m + 1):(m + n)],  # don't know how to get those separately
-    multipliers_U = eltype(x)[],
-    solver_specific = Dict(:internal_msg => nStatus, :real_time => real_time),
-  )
+  stats = GenericExecutionStats(nlp)
+  set_status!(stats, knitro_statuses(nStatus))
+  set_solution!(stats, x)
+  set_objective!(stats, obj_val)
+  set_residuals!(stats, primal_feas, dual_feas)
+  set_iter!(stats, convert(Int, iter))
+  set_time!(stats, Δt)
+  zL = similar(lambda_, has_bounds(nlp) ? nlp.meta.nvar : 0)
+  zU = similar(lambda_, has_bounds(nlp) ? nlp.meta.nvar : 0)
+  if has_bounds(nlp)
+    zL .= max.(lambda_[(m + 1):(m + n)], 0)
+    zU .= .-min.(lambda_[(m + 1):(m + n)], 0)
+  end
+  set_multipliers!(stats, lambda_[1:m], zL, zU)
+  set_solver_specific!(stats, :internal_msg, nStatus)
+  set_solver_specific!(stats, :real_time, real_time)
+  stats
 end
