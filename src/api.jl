@@ -106,15 +106,20 @@ function knitro(nls::AbstractNLSModel; kwargs...)
     set_solution!(stats, fstats.solution[1:(nls.meta.nvar)])
     fstats.objective_reliable || error("objective unreliable")
     set_objective!(stats, stats.objective)
-    fstats.residuals_reliable || error("residuals unreliable")
-    set_residuals!(stats, fstats.primal_feas, fstats.dual_feas)
+    fstats.primal_residual_reliable || error("primal residual unreliable")
+    set_primal_residual!(stats, fstats.primal_feas)
+    fstats.dual_residual_reliable || error("dual residual unreliable")
+    set_residuals!(stats, fstats.dual_feas)
     fstats.multipliers_reliable || error("multipliers unreliable")
-    set_multipliers!(
-      stats,
-      fstats.multipliers[(nls.nls_meta.nequ + 1):end],
-      has_bounds(nls) ? fstats.multipliers_L[1:(nls.meta.nvar)] : similar(fstats.multipliers_L),
-      has_bounds(nls) ? fstats.multipliers_U[1:(nls.meta.nvar)] : similar(fstats.multipliers_U),
-    )
+    set_multipliers!(stats, fstats.multipliers[(nls.nls_meta.nequ + 1):end])
+    if has_bounds(nls)
+      fstats.bounds_multipliers_reliable || error("bounds multipliers unreliable")
+      set_multipliers!(
+        stats,
+        fstats.multipliers_L[1:(nls.meta.nvar)],
+        fstats.multipliers_U[1:(nls.meta.nvar)],
+      )
+    end
     fstats.iter_reliable || error("number of iterations unreliable")
     set_iter!(stats, fstats.iter)
     fstats.time_reliable || error("elapsed time unreliable")
