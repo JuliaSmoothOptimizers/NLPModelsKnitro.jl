@@ -114,7 +114,7 @@ function knitro(nls::AbstractNLSModel; kwargs...)
     set_multipliers!(stats, fstats.multipliers[(nls.nls_meta.nequ + 1):end])
     if has_bounds(nls)
       fstats.bounds_multipliers_reliable || error("bounds multipliers unreliable")
-      set_multipliers!(
+      set_bounds_multipliers!(
         stats,
         fstats.multipliers_L[1:(nls.meta.nvar)],
         fstats.multipliers_U[1:(nls.meta.nvar)],
