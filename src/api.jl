@@ -111,7 +111,7 @@ function knitro(nls::AbstractNLSModel; kwargs...)
     fstats.dual_residual_reliable || error("dual residual unreliable")
     set_dual_residual!(stats, fstats.dual_feas)
     fstats.multipliers_reliable || error("multipliers unreliable")
-    set_multipliers!(stats, fstats.multipliers[(nls.nls_meta.nequ + 1):end])
+    set_constraint_multipliers!(stats, fstats.multipliers[(nls.nls_meta.nequ + 1):end])
     if has_bounds(nls)
       fstats.bounds_multipliers_reliable || error("bounds multipliers unreliable")
       set_bounds_multipliers!(
