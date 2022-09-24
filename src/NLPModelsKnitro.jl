@@ -2,7 +2,7 @@ module NLPModelsKnitro
 
 using KNITRO
 
-export knitro, KnitroSolver, finalize, setparams!
+export knitro, KnitroSolver, finalize, setparams!, solve!
 
 """
     output = knitro(nlp; kwargs...)
