@@ -2,12 +2,18 @@ module NLPModelsKnitro
 
 using KNITRO
 
-export knitro, knitro!, KnitroSolver, finalize, setparams!
+export knitro, KnitroSolver, finalize, setparams!
 
 """
     output = knitro(nlp; kwargs...)
 
 Solves the `NLPModel` problem `nlp` using KNITRO.
+
+For advanced usage, first define a `KnitroSolver` to preallocate the memory used in the algorithm, and then call `solve!`:
+
+    solver = KnitroSolver(nlp)
+    solve!(solver, nlp; kwargs...)
+    solve!(solver, nlp, stats; kwargs...)
 
 # Optional keyword arguments
 * `x0`: a vector of size `nlp.meta.nvar` to specify an initial primal guess
@@ -22,15 +28,6 @@ All other keyword arguments will be passed to KNITRO as an option.
 See https://www.artelys.com/docs/knitro/3_referenceManual/userOptions.html for the list of options accepted.
 """
 function knitro end
-
-"""
-    output = knitro!(nlp::AbstractNLPModel, solver::KnitroSolver)
-
-Solves the `NLPModel` problem `nlp` using the structure `KnitroSolver` and KNITRO.
-
-See also the documentation of `knitro` and `KnitroSolver`.
-"""
-function knitro! end
 
 """
     KnitroSolver(::Val{Bool}, nlp; kwargs...,)
