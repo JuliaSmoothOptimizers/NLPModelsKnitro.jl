@@ -25,7 +25,7 @@ function test_qp_with_solver_and_evals()
   nlp =
     ADNLPModel(x -> (x[1] - 1)^2 + 4 * (x[2] - 3)^2, zeros(2), x -> [sum(x) - 1.0], [0.0], [0.0])
   solver = KnitroSolver(nlp, outlev = 0)
-  stats = knitro!(nlp, solver)
+  stats = solve!(solver, nlp)
   @test isapprox(stats.solution, [-1.4; 2.4], rtol = 1e-6)
   @test stats.iter == 1
   @test stats.status == :first_order
@@ -122,7 +122,7 @@ function test_larger_unconstrained_nls_with_solver()
   F_larger(x) = [[10 * (x[i + 1] - x[i]^2) for i = 1:(n - 1)]; [x[i] - 1 for i = 1:(n - 1)]]
   nls = ADNLSModel(F_larger, 0.9 * ones(n), 2 * (n - 1))  # there are local solutions other than ones(n)
   solver = KnitroSolver(nls, outlev = 0)
-  stats = knitro!(nls, solver)
+  stats = solve!(solver, nls)
   @test isapprox(stats.objective, 0, atol = 1.0e-6)
   @test isapprox(stats.solution, ones(n), rtol = 1e-6)
   @test stats.status == :first_order
@@ -173,7 +173,7 @@ function test_linear_constraints()
     ones(2),
   )
   solver = KnitroSolver(nlp, outlev = 0)
-  stats = knitro!(nlp, solver)
+  stats = solve!(solver, nlp)
   @test isapprox(stats.solution, [-1; 1], rtol = 1e-6)
   @test isapprox(stats.objective, 0.0, atol = 1e-6)
   @test stats.status == :first_order
@@ -196,7 +196,7 @@ function test_mixed_linear_constraints()
     ones(2),
   )
   solver = KnitroSolver(nlp, outlev = 0)
-  stats = knitro!(nlp, solver)
+  stats = solve!(solver, nlp)
   @test isapprox(stats.solution, [-1; 1], rtol = 1e-6)
   @test isapprox(stats.objective, 0.0, atol = 1e-6)
   @test stats.status == :first_order
