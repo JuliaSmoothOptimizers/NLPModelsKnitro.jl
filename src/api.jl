@@ -81,14 +81,14 @@ include("nls.jl")
 
 function knitro(nlp::AbstractNLPModel; kwargs...)
   solver = KnitroSolver(nlp; kwargs...)
-  stats = knitro!(nlp, solver)
+  stats = solve!(solver, nlp)
   finalize(solver)
   return stats
 end
 
 function knitro(nlp::FeasibilityFormNLS; kwargs...)
   solver = KnitroSolver(nlp; kwargs...)
-  stats = knitro!(nlp, solver)
+  stats = solve!(solver, nlp)
   finalize(solver)
   return stats
 end
@@ -134,13 +134,14 @@ function knitro(nls::AbstractNLSModel; kwargs...)
     return stats
   end
   solver = KnitroSolver(nls; kwargs...)
-  stats = knitro!(nls, solver)
+  stats = solve!(solver, nls)
   finalize(solver)
   return stats
 end
 
-function knitro!(nlp::AbstractNLPModel, solver::KnitroSolver)
+function SolverCore.solve!(solver::KnitroSolver, nlp::AbstractNLPModel, stats::GenericExecutionStats)
   kc = solver.kc
+  reset!(stats)
   t = @timed begin
     nStatus = KNITRO.KN_solve(kc)
   end
@@ -158,7 +159,6 @@ function knitro!(nlp::AbstractNLPModel, solver::KnitroSolver)
     Δt = real_time = t[2]
   end
 
-  stats = GenericExecutionStats(nlp)
   set_status!(stats, knitro_statuses(nStatus))
   set_solution!(stats, x)
   set_objective!(stats, obj_val)
