@@ -1,6 +1,6 @@
 module NLPModelsKnitro
 
-using KNITRO
+using KNITRO, SolverCore
 
 export knitro, KnitroSolver, finalize, setparams!, solve!
 
