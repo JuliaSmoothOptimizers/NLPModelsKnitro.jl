@@ -40,7 +40,7 @@ The first argument is `Val(false)` if the problem has been converted, and `Val(t
 
 For the possible `kwargs`, we refer to `knitro`.
 """
-mutable struct KnitroSolver
+mutable struct KnitroSolver <: AbstractOptimizationSolver
   kc
 end
 
