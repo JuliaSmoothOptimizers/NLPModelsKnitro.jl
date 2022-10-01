@@ -139,7 +139,11 @@ function knitro(nls::AbstractNLSModel; kwargs...)
   return stats
 end
 
-function SolverCore.solve!(solver::KnitroSolver, nlp::AbstractNLPModel, stats::GenericExecutionStats)
+function SolverCore.solve!(
+  solver::KnitroSolver,
+  nlp::AbstractNLPModel,
+  stats::GenericExecutionStats,
+)
   kc = solver.kc
   reset!(stats)
   t = @timed begin
