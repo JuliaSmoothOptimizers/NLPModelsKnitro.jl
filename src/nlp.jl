@@ -3,7 +3,7 @@ function KnitroSolver(
   nlp::AbstractNLPModel;
   callback::Union{Function, Nothing} = nothing,
   kwargs...,
-) where {T}
+)
   n, m = nlp.meta.nvar, nlp.meta.ncon
 
   kc = KNITRO.KN_new()
