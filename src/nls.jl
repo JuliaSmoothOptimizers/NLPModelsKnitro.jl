@@ -3,7 +3,7 @@ function KnitroSolver(
   nls::AbstractNLSModel;
   callback::Union{Function, Nothing} = nothing,
   kwargs...,
-) where {T}
+)
   @assert nls.meta.ncon == 0
   n, ne = nls.meta.nvar, nls.nls_meta.nequ
 
