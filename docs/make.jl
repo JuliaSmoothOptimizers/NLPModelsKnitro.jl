@@ -4,7 +4,7 @@ using NLPModelsKnitro
 makedocs(
   modules = [NLPModelsKnitro],
   doctest = true,
-  strict = true,
+  linkcheck = true,
   format = Documenter.HTML(
     prettyurls = get(ENV, "CI", nothing) == "true",
     assets = ["assets/style.css"],
