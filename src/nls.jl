@@ -16,7 +16,7 @@ function KnitroSolver(
   end
 
   # add variables and bound constraints
-  KNITRO.KN_add_vars(kc, n)
+  KNITRO.KN_add_vars(kc, n, C_NULL)
 
   lvarinf = isinf.(nls.meta.lvar)
   if !all(lvarinf)
@@ -52,7 +52,7 @@ function KnitroSolver(
   end
 
   # add number of residual functions
-  KNITRO.KN_add_rsds(kc, ne)
+  KNITRO.KN_add_rsds(kc, ne, C_NULL)
 
   jrows, jcols = jac_structure_residual(nls)
 
@@ -89,7 +89,14 @@ function KnitroSolver(
 
   # pass options to KNITRO
   for (k, v) in kwargs
-    KNITRO.KN_set_param(kc, string(k), v)
+    if v isa Integer
+      KNITRO.KN_set_int_param_by_name(kc, string(k), v)
+    elseif v isa Cdouble
+      KNITRO.KN_set_double_param_by_name(kc, string(k), v)
+    else
+      @assert v isa AbstractString
+      KNITRO.KN_set_char_param_by_name(kc, string(k), v)
+    end
   end
 
   # set user-defined callback called after each iteration

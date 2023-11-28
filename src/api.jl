@@ -64,11 +64,18 @@ function setparams!(solver::KnitroSolver; kwargs...)
   end
 
   # specify that we are able to provide the Hessian without including the objective
-  KNITRO.KN_set_param(kc, KNITRO.KN_PARAM_HESSIAN_NO_F, KNITRO.KN_HESSIAN_NO_F_ALLOW)
+  KNITRO.KN_set_int_param(kc, KNITRO.KN_PARAM_HESSIAN_NO_F, KNITRO.KN_HESSIAN_NO_F_ALLOW)
 
   # pass options to KNITRO
   for (k, v) in kwargs
-    KNITRO.KN_set_param(kc, string(k), v)
+    if v isa Integer
+      KNITRO.KN_set_int_param_by_name(kc, string(k), v)
+    elseif v isa Cdouble
+      KNITRO.KN_set_double_param_by_name(kc, string(k), v)
+    else
+      @assert v isa AbstractString
+      KNITRO.KN_set_char_param_by_name(kc, string(k), v)
+    end
   end
 
   return solver
@@ -153,12 +160,19 @@ function SolverCore.solve!(
   nStatus, obj_val, x, lambda_ = KNITRO.KN_get_solution(kc)
   n = length(x)
   m = length(lambda_) - n
-  primal_feas = KNITRO.KN_get_abs_feas_error(kc)
-  dual_feas = KNITRO.KN_get_abs_opt_error(kc)
-  iter = KNITRO.KN_get_number_iters(kc)
-  if KNITRO_VERSION ≥ v"12.0"
-    Δt = KNITRO.KN_get_solve_time_cpu(kc)
-    real_time = KNITRO.KN_get_solve_time_real(kc)
+  pCdouble = Ref{Cdouble}()
+  KNITRO.KN_get_abs_feas_error(kc, pCdouble)
+  primal_feas = pCdouble[]
+  KNITRO.KN_get_abs_opt_error(kc, pCdouble)
+  dual_feas = pCdouble[]
+  pCint = Ref{Cint}()
+  KNITRO.KN_get_number_iters(kc, pCint)
+  iter = pCint[]
+  if KNITRO.knitro_version() ≥ v"12.0"
+    KNITRO.KN_get_solve_time_cpu(kc, pCdouble)
+    Δt = pCdouble[]
+    KNITRO.KN_get_solve_time_real(kc, pCdouble)
+    real_time = pCdouble[]
   else
     Δt = real_time = t[2]
   end

@@ -15,7 +15,7 @@ function KnitroSolver(
   end
 
   # add variables and bound constraints
-  KNITRO.KN_add_vars(kc, n)
+  KNITRO.KN_add_vars(kc, n, C_NULL)
 
   lvarinf = isinf.(nlp.meta.lvar)
   if !all(lvarinf)
@@ -38,7 +38,7 @@ function KnitroSolver(
   end
 
   # add constraints
-  KNITRO.KN_add_cons(kc, m)
+  KNITRO.KN_add_cons(kc, m, C_NULL)
   lcon = nlp.meta.lcon
   lconinf = isinf.(lcon)
   if any(lconinf)
@@ -58,7 +58,7 @@ function KnitroSolver(
     jlrows, jlcols = jac_lin_structure(nlp)
     for klin = 1:(nlp.meta.lin_nnzj)
       row = nlp.meta.lin[jlrows[klin]]
-      KNITRO.KN_add_con_linear_struct(kc, Int32(row - 1), Int32(jlcols[klin] - 1), jlvals[klin])
+      KNITRO.KN_add_con_linear_struct_one(kc, 1, row - 1, Cint[jlcols[klin] - 1], Cdouble[jlvals[klin]])
     end
   end
 
@@ -157,11 +157,18 @@ function KnitroSolver(
   )
 
   # specify that we are able to provide the Hessian without including the objective
-  KNITRO.KN_set_param(kc, KNITRO.KN_PARAM_HESSIAN_NO_F, KNITRO.KN_HESSIAN_NO_F_ALLOW)
+  KNITRO.KN_set_int_param(kc, KNITRO.KN_PARAM_HESSIAN_NO_F, KNITRO.KN_HESSIAN_NO_F_ALLOW)
 
   # pass options to KNITRO
   for (k, v) in kwargs
-    KNITRO.KN_set_param(kc, string(k), v)
+    if v isa Integer
+      KNITRO.KN_set_int_param_by_name(kc, string(k), v)
+    elseif v isa Cdouble
+      KNITRO.KN_set_double_param_by_name(kc, string(k), v)
+    else
+      @assert v isa AbstractString
+      KNITRO.KN_set_char_param_by_name(kc, string(k), v)
+    end
   end
 
   # set user-defined callback called after each iteration
