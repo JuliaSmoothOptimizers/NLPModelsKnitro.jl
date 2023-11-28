@@ -34,7 +34,7 @@ function knitro end
 
 Returns a `KnitroSolver` structure to solve the problem `nlp` with `knitro!`.
 
-Knitro does not accept least-squares problems with constraints other than bounds. 
+Knitro does not accept least-squares problems with constraints other than bounds.
 If an NLSModel has constraints other than bounds, we convert it to a FeasibilityFormNLS.
 The first argument is `Val(false)` if the problem has been converted, and `Val(true)` otherwise.
 
@@ -44,8 +44,7 @@ mutable struct KnitroSolver <: AbstractOptimizationSolver
   kc
 end
 
-const KNITRO_VERSION = KNITRO.KNITRO_VERSION
-if KNITRO_VERSION == v"0.0.0"
+if KNITRO.knitro_version() == v"0.0.0"
   @error "KNITRO is not installed correctly"
 else
   include("api.jl")

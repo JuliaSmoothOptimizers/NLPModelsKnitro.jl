@@ -30,14 +30,20 @@ function test_qp_with_solver_and_evals()
   @test stats.iter == 1
   @test stats.status == :first_order
 
-  gx = KNITRO.KN_get_objgrad_values(solver.kc)[2]
+  gx = zeros(2)
+  KNITRO.KN_get_objgrad_values_all(solver.kc, gx)
   @test isapprox(gx, [-4.8; -4.8], rtol = 1e-6)
-  cx = KNITRO.KN_get_con_values(solver.kc)
+  cx = zeros(1)
+  KNITRO.KN_get_con_values_all(solver.kc, cx)
   @test isapprox(norm(cx), 0, atol = 1e-6)
-  Jx = KNITRO.KN_get_jacobian_values(solver.kc)
-  @test Jx[1] == [0; 0]
-  @test Jx[2] == [0; 1]
-  @test Jx[3] == [1; 1]
+  nnz = Ref{Clonglong}()
+  KN_get_jacobian_nnz(solver.kc, nnz)
+  @test nnz[] == 2
+  vars, cons, coef = zeros(Cint, 2), zeros(Cint, 2), zeros(2)
+  KNITRO.KN_get_jacobian_values(solver.kc, vars, cons, coef)
+  @test vars == Cint[0, 0]
+  @test cons == Cint[0, 1]
+  @test coef == Cdouble[1, 1]
   finalize(solver)
 end
 
@@ -66,7 +72,9 @@ end
 
 function test_with_callback()
   function callback(kc, x, lambda_, userParams)
-    if KNITRO.KN_get_number_iters(kc) > 1
+    pCint = Ref{Cint}()
+    KNITRO.KN_get_number_iters(kc, pCint)
+    if pCint[] > 1
       return KNITRO.KN_RC_USER_TERMINATION
     end
     return 0
@@ -177,10 +185,17 @@ function test_linear_constraints()
   @test isapprox(stats.solution, [-1; 1], rtol = 1e-6)
   @test isapprox(stats.objective, 0.0, atol = 1e-6)
   @test stats.status == :first_order
-  cx = KNITRO.KN_get_con_values(solver.kc)
+  cx = zeros(2)
+  KNITRO.KN_get_con_values_all(solver.kc, cx)
   @test isapprox(cx, [1, 1], rtol = 1e-6)
-  Jx = KNITRO.KN_get_jacobian_values(solver.kc)
-  @test Jx == (Int32[0, 0, 1, 1], Int32[0, 1, 0, 1], [1.0, 2.0, 3.0, 4.0])
+  nnz = Ref{Clonglong}()
+  KN_get_jacobian_nnz(solver.kc, nnz)
+  @test nnz[] == 4
+  vars, cons, coef = zeros(Cint, 4), zeros(Cint, 4), zeros(4)
+  KNITRO.KN_get_jacobian_values(solver.kc, vars, cons, coef)
+  @test vars == Int32[0, 0, 1, 1]
+  @test cons == Int32[0, 1, 0, 1]
+  @test coef == [1.0, 2.0, 3.0, 4.0]
   finalize(solver)
 end
 
@@ -200,10 +215,17 @@ function test_mixed_linear_constraints()
   @test isapprox(stats.solution, [-1; 1], rtol = 1e-6)
   @test isapprox(stats.objective, 0.0, atol = 1e-6)
   @test stats.status == :first_order
-  cx = KNITRO.KN_get_con_values(solver.kc)
+  cx = zeros(2)
+  KNITRO.KN_get_con_values_all(solver.kc, cx)
   @test isapprox(cx, [1, 1], rtol = 1e-6)
-  Jx = KNITRO.KN_get_jacobian_values(solver.kc)
-  @test Jx == (Int32[0, 0, 1, 1], Int32[0, 1, 0, 1], [3.0, 4.0, 1.0, 2.0])
+  nnz = Ref{Clonglong}()
+  KN_get_jacobian_nnz(solver.kc, nnz)
+  @test nnz[] == 4
+  vars, cons, coef = zeros(Cint, 4), zeros(Cint, 4), zeros(4)
+  KNITRO.KN_get_jacobian_values(solver.kc, vars, cons, coef)
+  @test vars == Int32[0, 0, 1, 1]
+  @test cons == Int32[0, 1, 0, 1]
+  @test coef == [3.0, 4.0, 1.0, 2.0]
   finalize(solver)
 end
 
