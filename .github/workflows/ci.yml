@@ -1,0 +1,44 @@
+name: CI
+on:
+  push:
+    branches: [master]
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  test:
+    name: 'KNITRO'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['1.6', '1']
+    steps:
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.version }}
+          arch: 'x64'
+      - uses: actions/cache@v1
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-test-${{ env.cache-name }}-
+            ${{ runner.os }}-test-
+            ${{ runner.os }}-
+      - shell: bash
+        env:
+          ARTELYS_LIC_JSO: ${{ secrets.ARTELYS_LIC_8315_POLYTECH_MTL_2023_10_26 }}
+        run: |
+          echo "$ARTELYS_LIC_JSO" > ~/artelys_lic.txt
+      - uses: julia-actions/julia-buildpkg@v1
+        env:
+          SECRET_KNITRO_URL: ${{ secrets.SECRET_KNITRO_URL }}
+          SECRET_KNITRO_LIBIOMP5: ${{ secrets.SECRET_KNITRO_LIBIOMP5 }}
+      - uses: julia-actions/julia-runtest@v1
+      - uses: julia-actions/julia-processcoverage@v1
+      - uses: codecov/codecov-action@v1
+        with:
+          file: lcov.info
