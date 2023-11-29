@@ -1,7 +1,7 @@
 name = "NLPModelsKnitro"
 uuid = "bec4dd0d-7755-52d5-9a02-22f0ffc7efcb"
 authors = ["Dominique Orban <dominique.orban@gmail.com>"]
-version = "0.7.2"
+version = "0.8.0"
 
 [deps]
 KNITRO = "67920dd8-b58e-52a8-8622-53c4cffbe346"
@@ -12,12 +12,12 @@ SolverCore = "ff4d7338-4cf1-434d-91df-b86cb86fb843"
 [compat]
 ADNLPModels = "0.7"
 KNITRO = "0.14"
-LinearAlgebra = "<0.0.1, 1.6"
+LinearAlgebra = "1.6"
 NLPModels = "0.18, 0.19, 0.20"
 NLPModelsModifiers = "0.6"
 SolverCore = "0.3"
-Test = "<0.0.1, 1.6"
-julia = "^1.6.0"
+Test = "1.6"
+julia = "1.6"
 
 [extras]
 ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a"
