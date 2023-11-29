@@ -58,7 +58,13 @@ function KnitroSolver(
     jlrows, jlcols = jac_lin_structure(nlp)
     for klin = 1:(nlp.meta.lin_nnzj)
       row = nlp.meta.lin[jlrows[klin]]
-      KNITRO.KN_add_con_linear_struct_one(kc, 1, row - 1, Cint[jlcols[klin] - 1], Cdouble[jlvals[klin]])
+      KNITRO.KN_add_con_linear_struct_one(
+        kc,
+        1,
+        row - 1,
+        Cint[jlcols[klin] - 1],
+        Cdouble[jlvals[klin]],
+      )
     end
   end
 
