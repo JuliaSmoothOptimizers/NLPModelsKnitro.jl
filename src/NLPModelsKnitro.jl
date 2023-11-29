@@ -44,7 +44,7 @@ mutable struct KnitroSolver <: AbstractOptimizationSolver
   kc
 end
 
-if KNITRO.knitro_version() == v"0.0.0"
+if !KNITRO.has_knitro()
   @error "KNITRO is not installed correctly"
 else
   include("api.jl")
