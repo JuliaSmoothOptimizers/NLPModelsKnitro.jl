@@ -1,6 +1,5 @@
 name = "NLPModelsKnitro"
 uuid = "bec4dd0d-7755-52d5-9a02-22f0ffc7efcb"
-authors = ["Dominique Orban <dominique.orban@gmail.com>"]
 version = "0.8.0"
 
 [deps]

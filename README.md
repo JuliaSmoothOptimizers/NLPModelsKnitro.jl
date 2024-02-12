@@ -2,7 +2,7 @@
 
 ## How to Cite
 
- If you use NLPModelsKnitro.jl in your work, please cite using the format given in [CITATION.bib](https://github.com/JuliaSmoothOptimizers/NLPModelsKnitro.jl/blob/main/CITATION.bib).
+ If you use NLPModelsKnitro.jl in your work, please cite using the format given in [CITATION.cff](https://github.com/JuliaSmoothOptimizers/NLPModelsKnitro.jl/blob/main/CITATION.cff).
 
 [![CI](https://github.com/JuliaSmoothOptimizers/NLPModelsKnitro.jl/actions/workflows/CI_M1.yml/badge.svg)](https://github.com/JuliaSmoothOptimizers/NLPModelsKnitro.jl/actions/workflows/CI_M1.yml)
 [![DOI](https://zenodo.org/badge/181238418.svg)](https://zenodo.org/badge/latestdoi/181238418)
