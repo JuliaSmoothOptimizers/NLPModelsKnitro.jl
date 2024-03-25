@@ -2,7 +2,6 @@ using LinearAlgebra
 using Test
 
 using KNITRO
-
 using ADNLPModels, NLPModels, NLPModelsKnitro
 
 function test_unconstrained()
