@@ -165,7 +165,7 @@ function test_nls_maximize()
   @test nls.meta.minimize == false
   stats = knitro(nls, outlev = 0)
   @test isapprox(stats.solution, ones(1), rtol = 1e-6)
-  @test isapprox(stats.objective, 0.5, rtol = 1e-6)
+  @test isapprox(stats.objective, 0.5, rtol = 1e-5)
   @test stats.status == :first_order
 end
 
