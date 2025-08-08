@@ -2,7 +2,7 @@ function KnitroSolver(
   ::Val{true},
   nlp::AbstractNLPModel;
   callback::Union{Function, Nothing} = nothing,
-  linear_api::Bool=true,
+  linear_api::Bool = true,
   kwargs...,
 )
   n, m = nlp.meta.nvar, nlp.meta.ncon
