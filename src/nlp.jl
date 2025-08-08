@@ -2,6 +2,7 @@ function KnitroSolver(
   ::Val{true},
   nlp::AbstractNLPModel;
   callback::Union{Function, Nothing} = nothing,
+  linear_api::Bool=true,
   kwargs...,
 )
   n, m = nlp.meta.nvar, nlp.meta.ncon
@@ -53,7 +54,7 @@ function KnitroSolver(
   end
   KNITRO.KN_set_con_lobnds_all(kc, lcon)
   KNITRO.KN_set_con_upbnds_all(kc, ucon)
-  if nlp.meta.nlin > 0
+  if (nlp.meta.nlin > 0) && linear_api
     jlvals = jac_lin_coord(nlp, nlp.meta.x0)
     jlrows, jlcols = jac_lin_structure(nlp)
     for klin = 1:(nlp.meta.lin_nnzj)
@@ -85,7 +86,11 @@ function KnitroSolver(
     pop!(kwargs, :z0)
   end
 
-  jrows, jcols = nlp.meta.nnln > 0 ? jac_nln_structure(nlp) : (Int[], Int[])
+  if linear_api
+    jrows, jcols = nlp.meta.nnln > 0 ? jac_nln_structure(nlp) : (Int[], Int[])
+  else
+    jrows, jcols = jac_structure(nlp)
+  end
   hrows, hcols = hess_structure(nlp)
 
   # define evaluation callback
@@ -95,10 +100,18 @@ function KnitroSolver(
 
     if evalRequestCode == KNITRO.KN_RC_EVALFC
       evalResult.obj[1] = obj(nlp, x)
-      nlp.meta.nnln > 0 && cons_nln!(nlp, x, view(evalResult.c, 1:(nlp.meta.nnln)))
+      if linear_api
+        nlp.meta.nnln > 0 && cons_nln!(nlp, x, view(evalResult.c, 1:(nlp.meta.nnln)))
+      else
+        cons!(nlp, x, evalResult.c)
+      end
     elseif evalRequestCode == KNITRO.KN_RC_EVALGA
       grad!(nlp, x, evalResult.objGrad)
-      nlp.meta.nnln > 0 && jac_nln_coord!(nlp, x, evalResult.jac)
+      if linear_api
+        nlp.meta.nnln > 0 && jac_nln_coord!(nlp, x, evalResult.jac)
+      else
+        jac_coord!(nlp, x, evalResult.jac)
+      end
     elseif evalRequestCode == KNITRO.KN_RC_EVALH
       if nlp.meta.nnln > 0
         hess_coord!(
