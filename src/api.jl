@@ -72,9 +72,10 @@ function setparams!(solver::KnitroSolver; kwargs...)
       KNITRO.KN_set_int_param_by_name(kc, string(k), v)
     elseif v isa Cdouble
       KNITRO.KN_set_double_param_by_name(kc, string(k), v)
-    else
-      @assert v isa AbstractString
+    elseif v isa AbstractString
       KNITRO.KN_set_char_param_by_name(kc, string(k), v)
+    else
+      @warn "The option $(string(k)) was ignored."
     end
   end
 
