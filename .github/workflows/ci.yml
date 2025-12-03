@@ -30,7 +30,7 @@ jobs:
             ${{ runner.os }}-
       - shell: bash
         env:
-          ARTELYS_LIC_JSO: ${{ secrets.ARTELYS_LIC_8315_POLYTECH_MTL_2023_10_26 }}
+          ARTELYS_LIC_JSO: ${{ secrets.ARTELYS_LICENSE }}
         run: |
           echo "$ARTELYS_LIC_JSO" > ~/artelys_lic.txt
       - uses: julia-actions/julia-buildpkg@v1
