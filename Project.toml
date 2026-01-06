@@ -14,7 +14,7 @@ KNITRO = "1.1.0"
 LinearAlgebra = "1.10"
 NLPModels = "0.21.5"
 NLPModelsModifiers = "0.7"
-SolverCore = "0.3"
+SolverCore = "0.3.9"
 Test = "1.10"
 julia = "1.10"
 

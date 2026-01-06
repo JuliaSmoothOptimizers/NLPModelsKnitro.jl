@@ -153,7 +153,7 @@ function SolverCore.solve!(
   stats::GenericExecutionStats,
 )
   kc = solver.kc
-  reset!(stats)
+  SolverCore.reset!(stats)
   t = @timed begin
     nStatus = KNITRO.KN_solve(kc)
   end
