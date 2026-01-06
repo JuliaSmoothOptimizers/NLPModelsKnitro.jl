@@ -200,3 +200,16 @@ contour!(range(18, 60, step=0.1), range(40_000, 180_000, step=1.0), f, levels=[0
 ```
 
 ![](assets/ex3.png)
+
+## Example: Using L-BFGS (limited-memory) Hessian approximation with KNITRO
+
+You can call KNITRO with the L-BFGS Hessian approximation by passing the following options:
+
+```julia
+stats_knitro = knitro(nlp,
+  hessopt=6,
+  lmsize=10)
+```
+
+This will use the L-BFGS method for Hessian approximation with a history size of 10.
+Note that these options are used by default in `NLPModelsKnitro.jl` if `nlp.meta.hess_available` is `false`.
