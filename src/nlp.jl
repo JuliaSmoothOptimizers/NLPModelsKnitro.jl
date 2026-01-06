@@ -5,6 +5,7 @@ function KnitroSolver(
   linear_api::Bool = true,
   kwargs...,
 )
+  @assert nlp.meta.grad_available && (nlp.meta.ncon == 0 || nlp.meta.jac_available)
   n, m = nlp.meta.nvar, nlp.meta.ncon
 
   kc = KNITRO.KN_new()
@@ -91,7 +92,12 @@ function KnitroSolver(
   else
     jrows, jcols = jac_structure(nlp)
   end
-  hrows, hcols = hess_structure(nlp)
+
+  if nlp.meta.hess_available
+    hrows, hcols = hess_structure(nlp)
+  else
+    hrows, hcols = Int[], Int[]
+  end
 
   # define evaluation callback
   function evalAll(kc, cb, evalRequest, evalResult, userParams)
@@ -175,8 +181,14 @@ function KnitroSolver(
     hessIndexVars2 = convert(Vector{Int32}, hrows .- 1),
   )
 
-  # specify that we are able to provide the Hessian without including the objective
-  KNITRO.KN_set_int_param(kc, KNITRO.KN_PARAM_HESSIAN_NO_F, KNITRO.KN_HESSIAN_NO_F_ALLOW)
+  # Use L-BFGS if the sparse hessian of the Lagrangian is not available
+  if !nlp.meta.hess_available
+    KNITRO.KN_set_int_param_by_name(kc, "hessopt", 6)
+    KNITRO.KN_set_int_param_by_name(kc, "lmsize", 10)
+  else
+    # specify that we are able to provide the Hessian without including the objective
+    KNITRO.KN_set_int_param(kc, KNITRO.KN_PARAM_HESSIAN_NO_F, KNITRO.KN_HESSIAN_NO_F_ALLOW)
+  end
 
   # pass options to KNITRO
   for (k, v) in kwargs
