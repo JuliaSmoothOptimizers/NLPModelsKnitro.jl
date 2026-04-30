@@ -70,6 +70,32 @@ function test_with_params()
   @test stats.status == :first_order
 end
 
+function test_with_setparams()
+  nlp = ADNLPModel(
+    x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2,
+    [0.0, 0.0],
+    [-1.0, -1.0],
+    [1.0, 1.0],
+    x -> [x[1] + x[2]],
+    [0.0],
+    [0.0],
+  )
+  solver = KnitroSolver(nlp)
+  params = Dict(
+    :opttol => 1e-12,
+    :presolve => 0,
+    :outlev => 0,
+    :x0 => [-1.2; 1.0],
+    :y0 => [3.14],
+    :z0 => [2.71; -2.71],
+  )
+  setparams!(solver; params...)
+  stats = solve!(solver, nlp)
+  @test isapprox(stats.solution, [0.0096; -0.0096], rtol = 1e-2)
+  @test stats.status == :first_order
+  finalize(solver)
+end
+
 function test_with_callback()
   function callback(kc, x, lambda_, userParams)
     pCint = Ref{Cint}()
@@ -234,6 +260,7 @@ test_qp()
 test_qp_with_solver_and_evals()
 test_constrained()
 test_with_params()
+test_with_setparams()
 test_with_callback()
 test_maximize()
 test_linear_constraints()

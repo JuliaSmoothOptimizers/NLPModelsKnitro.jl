@@ -51,15 +51,15 @@ function setparams!(solver::KnitroSolver; kwargs...)
   # set primal and dual initial guess
   kwargs = Dict(kwargs)
   if :x0 ∈ keys(kwargs)
-    KNITRO.KN_set_var_primal_init_values(kc, kwargs[:x0])
+    KNITRO.KN_set_var_primal_init_values_all(kc, kwargs[:x0])
     pop!(kwargs, :x0)
   end
   if :y0 ∈ keys(kwargs)
-    KNITRO.KN_set_con_dual_init_values(kc, kwargs[:y0])
+    KNITRO.KN_set_con_dual_init_values_all(kc, kwargs[:y0])
     pop!(kwargs, :y0)
   end
   if :z0 ∈ keys(kwargs)
-    KNITRO.KN_set_var_dual_init_values(kc, kwargs[:z0])
+    KNITRO.KN_set_var_dual_init_values_all(kc, kwargs[:z0])
     pop!(kwargs, :z0)
   end
 
