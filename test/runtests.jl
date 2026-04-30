@@ -236,7 +236,7 @@ end
     ones(2),
     ones(2),
   )
-  solver = KnitroSolver(nlp, outlev = 0)
+  solver = KnitroSolver(nlp, linear_api = false, outlev = 0)
   stats = solve!(solver, nlp)
   @test isapprox(stats.solution, [-1; 1], rtol = 1e-6)
   @test isapprox(stats.objective, 0.0, atol = 1e-6)
