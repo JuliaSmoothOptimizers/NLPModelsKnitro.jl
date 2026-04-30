@@ -5,14 +5,14 @@ using KNITRO
 
 using ADNLPModels, NLPModels, NLPModelsKnitro
 
-function test_unconstrained()
+@testset "test_unconstrained" begin
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2, [-1.2; 1.0])
   stats = knitro(nlp, outlev = 0)
   @test isapprox(stats.solution, [1.0; 1.0], rtol = 1e-6)
   @test stats.status == :first_order
 end
 
-function test_qp()
+@testset "test_qp" begin
   nlp =
     ADNLPModel(x -> (x[1] - 1)^2 + 4 * (x[2] - 3)^2, zeros(2), x -> [sum(x) - 1.0], [0.0], [0.0])
   stats = knitro(nlp, outlev = 0)
@@ -21,7 +21,7 @@ function test_qp()
   @test stats.status == :first_order
 end
 
-function test_qp_with_solver_and_evals()
+@testset "test_qp_with_solver_and_evals" begin
   nlp =
     ADNLPModel(x -> (x[1] - 1)^2 + 4 * (x[2] - 3)^2, zeros(2), x -> [sum(x) - 1.0], [0.0], [0.0])
   solver = KnitroSolver(nlp, outlev = 0)
@@ -47,7 +47,7 @@ function test_qp_with_solver_and_evals()
   finalize(solver)
 end
 
-function test_constrained()
+@testset "test_constrained" begin
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 4 * (x[2] - 3)^2, zeros(2), x -> [dot(x, x)], [0.0], [1.0])
   stats = knitro(nlp, outlev = 0)
   @test isapprox(stats.solution, [0.11021046172567574, 0.9939082725775202], rtol = 1e-6)
@@ -63,14 +63,14 @@ function test_constrained()
   @test stats.iter == 2
 end
 
-function test_with_params()
+@testset "test_with_params" begin
   nlp = ADNLPModel(x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2, [-1.2; 1.0])
   stats = knitro(nlp, opttol = 1e-12, presolve = 0, outlev = 0)
   @test isapprox(stats.solution, [1.0; 1.0], rtol = 1e-6)
   @test stats.status == :first_order
 end
 
-function test_with_setparams()
+@testset "test_with_setparams" begin
   nlp = ADNLPModel(
     x -> (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2,
     [0.0, 0.0],
@@ -96,7 +96,7 @@ function test_with_setparams()
   finalize(solver)
 end
 
-function test_with_callback()
+@testset "test_with_callback" begin
   function callback(kc, x, lambda_, userParams)
     pCint = Ref{Cint}()
     KNITRO.KN_get_number_iters(kc, pCint)
@@ -112,7 +112,7 @@ function test_with_callback()
   @test stats.status == :exception
 end
 
-function test_maximize()
+@testset "test_maximize" begin
   f, x0 = x -> x[1], [0.5]
   nlp = ADNLPModel(f, x0, zeros(1), ones(1), minimize = false)
   @test nlp.meta.minimize == false
@@ -124,7 +124,7 @@ function test_maximize()
   @test stats.status == :first_order
 end
 
-function test_unconstrained_nls()
+@testset "test_unconstrained_nls" begin
   F_Rosen(x) = [x[1] - 1; 10 * (x[2] - x[1]^2)]
   nls = ADNLSModel(F_Rosen, [-1.2; 1.0], 2)
   stats = knitro(nls, outlev = 0)
@@ -133,7 +133,7 @@ function test_unconstrained_nls()
   @test stats.status == :first_order
 end
 
-function test_larger_unconstrained_nls()
+@testset "test_larger_unconstrained_nls" begin
   n = 100
   F_larger(x) = [[10 * (x[i + 1] - x[i]^2) for i = 1:(n - 1)]; [x[i] - 1 for i = 1:(n - 1)]]
   nls = ADNLSModel(F_larger, 0.9 * ones(n), 2 * (n - 1))  # there are local solutions other than ones(n)
@@ -151,7 +151,7 @@ function test_larger_unconstrained_nls()
   @test stats.iter == 0
 end
 
-function test_larger_unconstrained_nls_with_solver()
+@testset "test_larger_unconstrained_nls_with_solver" begin
   n = 100
   F_larger(x) = [[10 * (x[i + 1] - x[i]^2) for i = 1:(n - 1)]; [x[i] - 1 for i = 1:(n - 1)]]
   nls = ADNLSModel(F_larger, 0.9 * ones(n), 2 * (n - 1))  # there are local solutions other than ones(n)
@@ -163,7 +163,7 @@ function test_larger_unconstrained_nls_with_solver()
   finalize(solver)
 end
 
-function test_constrained_nls()
+@testset "test_constrained_nls" begin
   n = 3
   F_larger(x) = [[10 * (x[i + 1] - x[i]^2) for i = 1:(n - 1)]; [x[i] - 1 for i = 1:(n - 1)]]
   c_quad(x) = [sum(x .^ 2) - 5; prod(x) - 2]
@@ -185,7 +185,7 @@ function test_constrained_nls()
   @test stats.status == :first_order
 end
 
-function test_nls_maximize()
+@testset "test_nls_maximize" begin
   f, x0 = x -> x, [0.5]
   nls = ADNLSModel(f, x0, 1, zeros(1), ones(1), minimize = false)
   @test nls.meta.minimize == false
@@ -195,7 +195,7 @@ function test_nls_maximize()
   @test stats.status == :first_order
 end
 
-function test_linear_constraints()
+@testset "test_linear_constraints" begin
   nlp = ADNLPModel(
     x -> sum(x),
     zeros(2),
@@ -225,7 +225,7 @@ function test_linear_constraints()
   finalize(solver)
 end
 
-function test_mixed_linear_constraints()
+@testset "test_mixed_linear_constraints" begin
   nlp = ADNLPModel(
     x -> sum(x),
     zeros(2),
@@ -254,20 +254,3 @@ function test_mixed_linear_constraints()
   @test coef == [3.0, 4.0, 1.0, 2.0]
   finalize(solver)
 end
-
-test_unconstrained()
-test_qp()
-test_qp_with_solver_and_evals()
-test_constrained()
-test_with_params()
-test_with_setparams()
-test_with_callback()
-test_maximize()
-test_linear_constraints()
-test_mixed_linear_constraints()
-
-test_unconstrained_nls()
-test_larger_unconstrained_nls()
-test_larger_unconstrained_nls_with_solver()
-test_constrained_nls()
-test_nls_maximize()
