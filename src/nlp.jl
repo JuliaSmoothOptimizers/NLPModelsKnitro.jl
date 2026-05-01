@@ -164,12 +164,17 @@ function KnitroSolver(
   end
 
   # register callbacks
-  cb = KNITRO.KN_add_eval_callback(kc, true, convert(Vector{Int32}, nlp.meta.nln .- 1), evalAll)
+  using_linear_api = linear_api && get_nnln(nlp) > 0
+  cons_evaluated = using_linear_api ? get_nln(nlp) : collect(1:get_ncon(nlp))
+  cb = KNITRO.KN_add_eval_callback(kc, true, convert(Vector{Int32}, cons_evaluated .- 1), evalAll)
   KNITRO.KN_set_cb_grad(
     kc,
     cb,
     evalAll,
-    jacIndexCons = convert(Vector{Int32}, jrows .- 1 .+ nlp.meta.nlin),  # indices must be 0-based
+    jacIndexCons = convert(
+      Vector{Int32},
+      using_linear_api ? (jrows .- 1 .+ nlp.meta.nlin) : (jrows .- 1),
+    ),  # indices must be 0-based
     jacIndexVars = convert(Vector{Int32}, jcols .- 1),
   )
   KNITRO.KN_set_cb_hess(

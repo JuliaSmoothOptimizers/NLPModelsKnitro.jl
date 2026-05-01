@@ -254,3 +254,33 @@ end
   @test coef == [3.0, 4.0, 1.0, 2.0]
   finalize(solver)
 end
+
+@testset "test_mixed_linear_constraints with linear_api = false" begin
+  nlp = ADNLPModel(
+    x -> sum(x),
+    zeros(2),
+    Int32[1; 1],
+    Int32[1; 2],
+    [3.0; 4.0],
+    x -> [x[1] + 2 * x[2]],
+    ones(2),
+    ones(2),
+  )
+  solver = KnitroSolver(nlp, linear_api = false, outlev = 0)
+  stats = solve!(solver, nlp)
+  @test isapprox(stats.solution, [-1; 1], rtol = 1e-6)
+  @test isapprox(stats.objective, 0.0, atol = 1e-6)
+  @test stats.status == :first_order
+  cx = zeros(2)
+  KNITRO.KN_get_con_values_all(solver.kc, cx)
+  @test isapprox(cx, [1, 1], rtol = 1e-6)
+  nnz = Ref{Clonglong}()
+  KN_get_jacobian_nnz(solver.kc, nnz)
+  @test nnz[] == 4
+  vars, cons, coef = zeros(Cint, 4), zeros(Cint, 4), zeros(4)
+  KNITRO.KN_get_jacobian_values(solver.kc, vars, cons, coef)
+  @test vars == Int32[0, 0, 1, 1]
+  @test cons == Int32[0, 1, 0, 1]
+  @test coef == [3.0, 4.0, 1.0, 2.0]
+  finalize(solver)
+end
