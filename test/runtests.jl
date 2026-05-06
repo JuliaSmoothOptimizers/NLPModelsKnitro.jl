@@ -284,3 +284,35 @@ end
   @test coef == [3.0, 4.0, 1.0, 2.0]
   finalize(solver)
 end
+
+@testset "test problem with no exact Hessian" begin
+  mutable struct NoHessianNLPModel{T, S} <: AbstractNLPModel{T, S}
+    meta::NLPModelMeta{T, S}
+  end
+
+  function NoHessianNLPModel(T = Float64, S = Vector{Float64})
+    return NoHessianNLPModel{T, S}(
+      NLPModelMeta{T, S}(2, grad_available = true, hess_available = false, hprod_available = false),
+    )
+  end
+
+  NLPModels.obj(::NoHessianNLPModel, x::AbstractVector) = (x[1] - 1)^2 + 100 * (x[2] - x[1]^2)^2
+  NLPModels.grad!(::NoHessianNLPModel, x::AbstractVector, g::AbstractVector) =
+    (g .= [2 * (x[1] - 1) - 400 * x[1] * (x[2] - x[1]^2); 200 * (x[2] - x[1]^2)])
+
+  # Check that this model does not supply an exact Hessian.
+  nlp = NoHessianNLPModel()
+  @test get_hess_available(nlp) == false
+
+  # Check that the LBFGS option is activated.
+  solver = KnitroSolver(nlp, x0 = [-1.2; 1.0], outlev = 0)
+  param_value = Ref{Cint}(0)
+  KNITRO.KN_get_int_param(solver.kc, KNITRO.KN_PARAM_HESSOPT, param_value)
+  @test param_value[] == KNITRO.KN_HESSOPT_LBFGS
+
+  # Solve.
+  stats = solve!(solver, nlp)
+  @test isapprox(stats.solution, [1.0; 1.0], rtol = 1e-6)
+  @test stats.status == :first_order
+  finalize(solver)
+end
