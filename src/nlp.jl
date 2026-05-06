@@ -187,7 +187,6 @@ function KnitroSolver(
     )
   else
     KNITRO.KN_set_int_param(kc, KNITRO.KN_PARAM_HESSOPT, KNITRO.KN_HESSOPT_LBFGS)
-    KNITRO.KN_set_int_param(kc, KNITRO.KN_PARAM_LMSIZE, 10)
   end
 
   # pass options to KNITRO
