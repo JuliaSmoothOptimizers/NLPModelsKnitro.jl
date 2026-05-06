@@ -93,12 +93,6 @@ function KnitroSolver(
     jrows, jcols = jac_structure(nlp)
   end
 
-  if nlp.meta.hess_available
-    hrows, hcols = hess_structure(nlp)
-  else
-    hrows, hcols = Int[], Int[]
-  end
-
   # define evaluation callback
   function evalAll(kc, cb, evalRequest, evalResult, userParams)
     x = evalRequest.x
@@ -177,22 +171,23 @@ function KnitroSolver(
     ),  # indices must be 0-based
     jacIndexVars = convert(Vector{Int32}, jcols .- 1),
   )
-  KNITRO.KN_set_cb_hess(
-    kc,
-    cb,
-    nlp.meta.nnzh,
-    evalAll,
-    hessIndexVars1 = convert(Vector{Int32}, hcols .- 1),  # Knitro wants the upper triangle
-    hessIndexVars2 = convert(Vector{Int32}, hrows .- 1),
-  )
 
   # Use L-BFGS if the sparse hessian of the Lagrangian is not available
-  if !nlp.meta.hess_available
-    KNITRO.KN_set_int_param_by_name(kc, "hessopt", 6)
-    KNITRO.KN_set_int_param_by_name(kc, "lmsize", 10)
-  else
+  if nlp.meta.hess_available
     # specify that we are able to provide the Hessian without including the objective
     KNITRO.KN_set_int_param(kc, KNITRO.KN_PARAM_HESSIAN_NO_F, KNITRO.KN_HESSIAN_NO_F_ALLOW)
+    hrows, hcols = hess_structure(nlp)
+    KNITRO.KN_set_cb_hess(
+      kc,
+      cb,
+      nlp.meta.nnzh,
+      evalAll,
+      hessIndexVars1 = convert(Vector{Int32}, hcols .- 1),  # Knitro wants the upper triangle
+      hessIndexVars2 = convert(Vector{Int32}, hrows .- 1),
+    )
+  else
+    KNITRO.KN_set_int_param(kc, KNITRO.KN_PARAM_HESSOPT, KNITRO.KN_HESSOPT_LBFGS)
+    KNITRO.KN_set_int_param(kc, KNITRO.KN_PARAM_LMSIZE, 10)
   end
 
   # pass options to KNITRO
