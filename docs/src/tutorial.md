@@ -1,11 +1,13 @@
 # Tutorial
 
 NLPModelsKnitro is a thin KNITRO wrapper for NLPModels. In this tutorial we show examples of problems created with NLPModels and solved with KNITRO.
+
 ```@contents
 Pages = ["tutorial.md"]
 ```
 
 Calling KNITRO is simple:
+
 ```julia
 `output = knitro(nlp; kwargs...)`
 
@@ -27,10 +29,13 @@ See [https://www.artelys.com/docs/knitro/3_referenceManual/userOptions.html](htt
 ## Simple problems
 
 Let's create an NLPModel for the Rosenbrock function
+
 ```math
 f(x) = (x_1 - 1)^2 + 100 (x_2 - x_1^2)^2
 ```
+
 and solve it with KNITRO:
+
 ```julia
 using ADNLPModels, NLPModelsKnitro
 
@@ -40,6 +45,7 @@ print(stats)
 ```
 
 For comparison, we present the same problem and output using JuMP:
+
 ```julia
 using JuMP, KNITRO
 
@@ -51,6 +57,7 @@ optimize!(model)
 ```
 
 Here is an example with a constrained problem:
+
 ```julia
 n = 10
 x0 = ones(n)
@@ -74,6 +81,7 @@ In addition to the built-in fields of `GenericExecutionStats`, we store the foll
 - `internal_msg`: detailed KNITRO output message.
 
 Here is an example using the constrained problem solve:
+
 ```julia
 stats.solver_specific[:internal_msg]
 ```
@@ -81,6 +89,7 @@ stats.solver_specific[:internal_msg]
 ## Manual input
 
 In this section, we work through an example where we specify the problem and its derivatives manually. For this, we need to implement the following `NLPModel` API methods:
+
 - `obj(nlp, x)`: evaluate the objective value at `x`;
 - `grad!(nlp, x, g)`: evaluate the objective gradient at `x`;
 - `cons!(nlp, x, c)`: evaluate the vector of constraints, if any;
@@ -89,11 +98,13 @@ In this section, we work through an example where we specify the problem and its
 - `hess_structure!(nlp, rows, cols)`: fill `rows` and `cols` with the spartity structure of the lower triangle of the Hessian of the Lagrangian;
 - `hess_coord!(nlp, x, y, vals; obj_weight=1.0)`: fill `vals` with the values of the Hessian of the Lagrangian corresponding to the sparsity structure returned by `hess_structure!()`, where `obj_weight` is the weight assigned to the objective, and `y` is the vector of multipliers.
 
-The model that we implement is a logistic regression modelq. We consider the model ``h(\beta; x) = (1 + e^{-\beta^Tx})^{-1}``, and the loss function
+The model that we implement is a logistic regression modelq. We consider the model `h(\beta; x) = (1 + e^{-\beta^Tx})^{-1}`, and the loss function
+
 ```math
 \ell(\beta) = -\sum_{i = 1}^m y_i \ln h(\beta; x_i) + (1 - y_i) \ln(1 - h(\beta; x_i))
 ```
-with regularization ``\lambda \|\beta\|^2 / 2``.
+
+with regularization `\lambda \|\beta\|^2 / 2`.
 
 ```julia
 using DataFrames, LinearAlgebra, NLPModels, NLPModelsKnitro, Random
@@ -208,8 +219,8 @@ You can call KNITRO with the L-BFGS Hessian approximation by passing the followi
 ```julia
 stats_knitro = knitro(nlp,
   hessopt=6,
-  lmsize=10)
+  lmsize=8)
 ```
 
-This will use the L-BFGS method for Hessian approximation with a history size of 10.
+This will use the L-BFGS method for Hessian approximation with a history size of 8.
 Note that these options are used by default in `NLPModelsKnitro.jl` if `nlp.meta.hess_available` is `false`.
