@@ -41,7 +41,7 @@ keywords:
   - Julia
   - Nonlinear Programming
 license: MPL-2.0
-version: 0.8.0
-date-released: '2023-10-30'
+version: 0.10.6
+date-released: '2026-05-06'
 repository-code: >-
   https://github.com/JuliaSmoothOptimizers/NLPModelsKnitro.jl
