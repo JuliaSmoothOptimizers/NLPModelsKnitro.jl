@@ -56,18 +56,20 @@ function KnitroSolver(
   KNITRO.KN_set_con_lobnds_all(kc, lcon)
   KNITRO.KN_set_con_upbnds_all(kc, ucon)
   if (nlp.meta.nlin > 0) && linear_api
-    jlvals = jac_lin_coord(nlp, nlp.meta.x0)
-    jlrows, jlcols = jac_lin_structure(nlp)
-    for klin = 1:(nlp.meta.lin_nnzj)
-      row = nlp.meta.lin[jlrows[klin]]
-      KNITRO.KN_add_con_linear_struct_one(
-        kc,
-        1,
-        row - 1,
-        Cint[jlcols[klin] - 1],
-        Cdouble[jlvals[klin]],
-      )
-    end
+    jlrows, indexVars = jac_lin_structure(nlp)
+    # jac_lin_structure indexes linear constraints 1, ..., nlin.
+    # We must map those to actual linear constraint indices in the full constraint set.
+    indexCons = nlp.meta.lin[jlrows]
+    indexCons .-= 1  # convert to 0-based indexing for Knitro
+    indexVars .-= 1
+    coefs = jac_lin_coord(nlp, nlp.meta.x0)
+    KNITRO.KN_add_con_linear_struct(
+      kc,
+      get_lin_nnzj(nlp),
+      convert(Vector{KNITRO.KNINT}, indexCons),
+      convert(Vector{KNITRO.KNINT}, indexVars),
+      convert(Vector{Cdouble}, coefs),
+    )
   end
 
   # set primal and dual initial guess
@@ -88,10 +90,13 @@ function KnitroSolver(
   end
 
   if linear_api
-    jrows, jcols = nlp.meta.nnln > 0 ? jac_nln_structure(nlp) : (Int[], Int[])
+    jrows, indexVars = nlp.meta.nnln > 0 ? jac_nln_structure(nlp) : (Int[], Int[])
+    indexCons = nlp.meta.nln[jrows]
   else
-    jrows, jcols = jac_structure(nlp)
+    indexCons, indexVars = jac_structure(nlp)
   end
+  indexCons .-= 1  # convert to 0-based indexing for Knitro
+  indexVars .-= 1
 
   # define evaluation callback
   function evalAll(kc, cb, evalRequest, evalResult, userParams)
@@ -165,11 +170,8 @@ function KnitroSolver(
     kc,
     cb,
     evalAll,
-    jacIndexCons = convert(
-      Vector{Int32},
-      using_linear_api ? (jrows .- 1 .+ nlp.meta.nlin) : (jrows .- 1),
-    ),  # indices must be 0-based
-    jacIndexVars = convert(Vector{Int32}, jcols .- 1),
+    jacIndexCons = convert(Vector{Int32}, indexCons),
+    jacIndexVars = convert(Vector{Int32}, indexVars),
   )
 
   # Use L-BFGS if the sparse hessian of the Lagrangian is not available
